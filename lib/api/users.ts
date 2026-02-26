@@ -1,0 +1,41 @@
+import apiClient from './client';
+import { User, PublicProfile, UpdateProfileRequest } from '@/lib/types';
+
+export const usersAPI = {
+  getProfile: async (id?: string) => {
+    const url = id ? `/users/profile/${id}` : '/users/profile';
+    const response = await apiClient.get<User>(url);
+    return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileRequest) => {
+    const response = await apiClient.patch<User>('/users/profile', data);
+    return response.data;
+  },
+
+  getPublicProfile: async (id: string) => {
+    const response = await apiClient.get<PublicProfile>(`/users/public/${id}`);
+    return response.data;
+  },
+
+  // Admin only
+  listUsers: async (params?: { isActive?: boolean }) => {
+    const response = await apiClient.get<User[]>('/users', { params });
+    return response.data;
+  },
+
+  listPending: async () => {
+    const response = await apiClient.get<User[]>('/users/pending');
+    return response.data;
+  },
+
+  approve: async (id: string) => {
+    const response = await apiClient.post<User>(`/users/${id}/approve`);
+    return response.data;
+  },
+
+  deactivate: async (id: string) => {
+    const response = await apiClient.post<User>(`/users/${id}/deactivate`);
+    return response.data;
+  },
+};
