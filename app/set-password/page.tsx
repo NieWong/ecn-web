@@ -23,12 +23,12 @@ export default function SetPasswordPage() {
 
     // Validation
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError('Нууц үг дорх нь 6 тэмдэгт байх ёстой.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Нууц үг таарчхгүй байна.');
       return;
     }
 
@@ -41,13 +41,13 @@ export default function SetPasswordPage() {
       console.error('Set password error:', err);
       
       if (err.response?.status === 404) {
-        setError('Account not found.');
+        setError('Бүртгэл олдсонгүй.');
       } else if (err.response?.status === 403) {
-        setError('Your account is not approved yet. Please wait for admin approval.');
+        setError('Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.');
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('An error occurred. Please try again.');
+        setError('Алдаа гарлаа. Дахин оролдоно уу.');
       }
     } finally {
       setIsLoading(false);
@@ -64,10 +64,10 @@ export default function SetPasswordPage() {
             </div>
           </Link>
           <h2 className="mt-6 font-serif text-3xl font-semibold tracking-tight text-gray-900">
-            Set your password
+            Нууц үг тохируулах
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Complete your registration to start writing.
+            Бүртгэлээ дүүргэн бичиж эхлээрэй.
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export default function SetPasswordPage() {
                 <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div className="ml-3">
                   <p className="text-sm text-blue-800">
-                    Your account has been approved! Set your password to complete registration.
+                    Таны бүртгэл зөвшөөрөгдлөө! Бүртгэлээ дүүргэхийн тулд нууц үг тохируулаарай.
                   </p>
                 </div>
               </div>
@@ -97,7 +97,7 @@ export default function SetPasswordPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address
+                Имэйл хаяг
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -110,14 +110,14 @@ export default function SetPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-2xl border border-black/10 bg-white py-3 pl-11 pr-4 text-gray-900 placeholder-gray-400 focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/10"
-                  placeholder="you@example.com"
+                  placeholder="таны@имэйл.com"
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                New Password
+                Шинэ нууц үг
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -133,12 +133,12 @@ export default function SetPasswordPage() {
                   placeholder="••••••••"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
+              <p className="mt-1 text-xs text-gray-500">Дорх нь 6 тэмдэгт байх</p>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
+                Нууц үг баталгаажуулах
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -164,17 +164,17 @@ export default function SetPasswordPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Setting password...
+                  Тохируулж байна...
                 </>
               ) : (
-                'Set Password & Continue'
+                'Нууц үг тохируулах'
               )}
             </Button>
           </div>
 
           <div className="text-center text-sm">
             <Link href="/login" className="text-gray-600 hover:text-gray-900 hover:underline">
-              Back to Sign In
+              Нэвтрэх руу буцах
             </Link>
           </div>
         </form>

@@ -45,8 +45,10 @@ export interface User {
   isActive: boolean;
   profilePictureId: string | null;
   profilePicture: File | null;
+  profilePicturePath: string | null;
   cvFileId: string | null;
   cvFile: File | null;
+  cvFilePath: string | null;
   aboutMe: string | null;
   facebook: string | null;
   twitter: string | null;
@@ -87,6 +89,7 @@ export interface Post {
   author?: User;
   coverFileId: string | null;
   coverFile?: File | null;
+  coverImagePath: string | null;
   categories?: Category[];
   images?: PostImage[];
   publishedAt: string | null;
@@ -110,7 +113,9 @@ export interface PublicProfile {
   linkedin: string | null;
   website: string | null;
   profilePicture: File | null;
+  profilePicturePath: string | null;
   cvFile: File | null;
+  cvFilePath: string | null;
 }
 
 // API Request Types
@@ -138,7 +143,9 @@ export interface UpdateProfileRequest {
   phone?: string;
   website?: string;
   profilePictureId?: string;
+  profilePicturePath?: string | null;
   cvFileId?: string;
+  cvFilePath?: string | null;
 }
 
 export interface CreatePostRequest {
@@ -150,6 +157,7 @@ export interface CreatePostRequest {
   status: PostStatus;
   visibility: Visibility;
   coverFileId?: string;
+  coverImagePath?: string | null;
   categoryIds?: string[];
 }
 
@@ -162,6 +170,7 @@ export interface UpdatePostRequest {
   status?: PostStatus;
   visibility?: Visibility;
   coverFileId?: string;
+  coverImagePath?: string | null;
   categoryIds?: string[];
 }
 

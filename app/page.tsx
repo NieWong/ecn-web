@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArticleCard } from '@/components/articles/article-card';
+import { TopStories } from '@/components/articles/top-stories';
+import { TrendingSidebar } from '@/components/articles/trending-sidebar';
 import { postsAPI, categoriesAPI } from '@/lib/api';
 import { Post, Category, PostStatus, Visibility } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, TrendingUp, Loader2 } from 'lucide-react';
-import { calculateReadTime, formatDate } from '@/lib/helpers';
+import { ArrowRight, TrendingUp, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
+import { calculateReadTime, formatDate, getImageUrl, getCoverImageUrl, getProfileImageUrl } from '@/lib/helpers';
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -62,138 +64,206 @@ export default function Home() {
   };
 
   const featuredPost = posts[0];
-  const secondaryPosts = posts.slice(1);
+  const secondaryFeatured = posts.slice(1, 3);
+  const topStories = posts.slice(0, 5);
+  const streamPosts = posts.slice(3);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <Header />
 
-      <section className="border-b border-black/5 py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="fade-up text-center">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">ECN Journal</p>
-            <h1 className="mt-6 font-serif text-5xl font-semibold tracking-tight text-gray-900 sm:text-6xl">
-              A calmer way to read the world.
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-              Modern reporting, thoughtful essays, and clear thinking from writers you can trust.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
-              <Link href="/register">
-                <Button size="lg" className="rounded-full bg-gray-900 px-8 text-white hover:bg-gray-800">
-                  Start Reading
-                </Button>
-              </Link>
-              <Link href="/write" className="text-sm font-semibold text-gray-700 hover:text-gray-900">
-                Start Writing
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {categories.length > 0 && (
-        <section className="border-b border-black/5 py-6">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center space-x-2 mb-4 text-xs uppercase tracking-[0.3em] text-gray-500">
-              <TrendingUp className="h-4 w-4" />
-              <h2>Trending topics</h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                  selectedCategory === null
-                    ? 'border-gray-900 bg-gray-900 text-white'
-                    : 'border-black/10 bg-white text-gray-600 hover:border-gray-900 hover:text-gray-900'
-                }`}
-              >
-                All
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                    selectedCategory === category.id
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-black/10 bg-white text-gray-600 hover:border-gray-900 hover:text-gray-900'
-                  }`}
-                >
-                  {category.name}
-                </button>
+      {!isLoading && !error && posts.length > 0 && (
+        <section className="border-b border-gray-100">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
+              {featuredPost && (
+                <div className="lg:col-span-2 lg:row-span-2">
+                  <Link href={`/article/${featuredPost.slug}`} className="group block h-full">
+                    <article className="relative h-full min-h-[300px] lg:min-h-[500px] rounded-2xl overflow-hidden bg-gray-900">
+                      {(featuredPost.coverImagePath || featuredPost.coverFile) && (
+                        <img
+                          src={getCoverImageUrl(featuredPost.coverImagePath, featuredPost.coverFile)}
+                          alt={featuredPost.title}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      )}
+                      <div className="hero-overlay absolute inset-0" />
+                      
+                      <div className="absolute inset-0 flex flex-col justify-end p-6 lg:p-10">
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="category-pill active">
+                            {featuredPost.categories?.[0]?.name || 'Featured'}
+                          </span>
+                        </div>
+                        
+                        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white leading-tight max-w-2xl">
+                          {featuredPost.title}
+                        </h2>
+                        
+                        {featuredPost.summary && (
+                          <p className="mt-4 text-base text-white/80 line-clamp-2 max-w-xl">
+                            {featuredPost.summary}
+                          </p>
+                        )}
+                        
+                        <div className="mt-5 flex items-center gap-4">
+                          <div className="flex items-center gap-3">
+                            {(featuredPost.author?.profilePicturePath || featuredPost.author?.profilePicture) ? (
+                              <img
+                                src={getProfileImageUrl(featuredPost.author.profilePicturePath, featuredPost.author.profilePicture)}
+                                alt={featuredPost.author.name || 'Зохиогч'}
+                                className="h-9 w-9 rounded-full object-cover ring-2 ring-white/30"
+                              />
+                            ) : (
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e63946] to-[#f472b6] text-white text-sm font-semibold ring-2 ring-white/30">
+                                {featuredPost.author?.name?.[0]?.toUpperCase() || 'A'}
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold text-white">
+                                {featuredPost.author?.name || 'Нэргүй'}
+                              </p>
+                              <p className="text-xs text-white/60">
+                                {formatDate(featuredPost.publishedAt || featuredPost.createdAt)}
+                                {' · '}
+                                {calculateReadTime(featuredPost.contentHtml || '')} мин унших
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                </div>
+              )}
+              
+              {secondaryFeatured.map((post) => (
+                <div key={post.id} className="lg:col-span-1">
+                  <Link href={`/article/${post.slug}`} className="group block h-full">
+                    <article className="relative h-full min-h-[200px] lg:min-h-0 rounded-2xl overflow-hidden bg-gray-900">
+                      {(post.coverImagePath || post.coverFile) && (
+                        <img
+                          src={getCoverImageUrl(post.coverImagePath, post.coverFile)}
+                          alt={post.title}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      )}
+                      <div className="hero-overlay absolute inset-0" />
+                      
+                      <div className="absolute inset-0 flex flex-col justify-end p-5">
+                        {post.categories?.[0] && (
+                          <span className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#e63946]">
+                            {post.categories[0].name}
+                          </span>
+                        )}
+                        <h3 className="text-lg font-bold text-white leading-snug line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-white/60">
+                          <span className="font-medium">{post.author?.name || 'Нэргүй'}</span>
+                          <span>·</span>
+                          <span>{formatDate(post.publishedAt || post.createdAt)}</span>
+                        </div>
+                      </div>
+                    </article>
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      <main className="flex-1 py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      {categories.length > 0 && (
+        <section className="border-b border-gray-100 bg-white sticky top-[112px] z-30">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-4 py-4 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 flex-shrink-0">
+                <TrendingUp className="h-4 w-4 text-[#e63946]" />
+                <span>Сэдэв:</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className={`category-pill whitespace-nowrap ${selectedCategory === null ? 'active' : ''}`}
+                >
+                  Бүгд
+                </button>
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`category-pill whitespace-nowrap ${selectedCategory === category.id ? 'active' : ''}`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <main className="flex-1 py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-[#e63946]" />
             </div>
           ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">{error}</p>
+            <div className="text-center py-20 max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center">
+                <Zap className="h-8 w-8 text-red-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Холболтын алдаа</h2>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <Button onClick={loadPosts} className="btn-primary">
+                Дахин оролдох
+              </Button>
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No articles found.</p>
-              <Link href="/write" className="mt-4 inline-block text-gray-900 hover:underline">
-                Be the first to write
+            <div className="text-center py-20 max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <Sparkles className="h-8 w-8 text-gray-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Нийтлэл байхгүй байна</h2>
+              <p className="text-gray-600 mb-6">Өөрийн нийтлэлээ бичиж эхлээрэй.</p>
+              <Link href="/write" className="btn-accent inline-flex items-center gap-2">
+                Бичиж эхлэх
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           ) : (
-            <>
-              {featuredPost && (
-                <div className="mb-12">
-                  <Link href={`/article/${featuredPost.slug}`}>
-                    <div className="group relative overflow-hidden rounded-3xl border border-black/10 bg-white">
-                      <div className="grid gap-8 p-8 md:grid-cols-[1.2fr_1fr]">
-                        <div className="space-y-4">
-                          <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Featured</p>
-                          <h2 className="font-serif text-3xl font-semibold text-gray-900 md:text-4xl">
-                            {featuredPost.title}
-                          </h2>
-                          {featuredPost.summary && (
-                            <p className="text-sm text-gray-600">
-                              {featuredPost.summary}
-                            </p>
-                          )}
-                          <div className="flex items-center space-x-4 text-xs uppercase tracking-[0.2em] text-gray-500">
-                            <span>{formatDate(featuredPost.publishedAt || featuredPost.createdAt)}</span>
-                            <span>{calculateReadTime(featuredPost.contentHtml || '')} min</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                            Read story <ArrowRight className="h-4 w-4" />
-                          </div>
-                        </div>
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gray-100">
-                          {featuredPost.coverFile && (
-                            <img
-                              src={featuredPost.coverFile.storageKey
-                                ? `${process.env.NEXT_PUBLIC_API_BASE?.replace('/api', '') || 'http://localhost:4000'}/uploads/${featuredPost.coverFile.storageKey}`
-                                : '/placeholder-image.jpg'
-                              }
-                              alt={featuredPost.title}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+            <div className="grid gap-10 lg:grid-cols-3">
+              {/* Main Stream */}
+              <div className="lg:col-span-2">
+                <div className="section-header">
+                  <Clock className="h-4 w-4" />
+                  <h2>Шинэ нийтлэлүүд</h2>
                 </div>
-              )}
-
-              <div className="space-y-2">
-                {secondaryPosts.map((post) => (
-                  <ArticleCard key={post.id} post={post} />
-                ))}
+                <div className="space-y-0">
+                  {streamPosts.map((post) => (
+                    <ArticleCard key={post.id} post={post} />
+                  ))}
+                </div>
+                
+                {/* Load More */}
+                {posts.length >= 20 && (
+                  <div className="mt-8 text-center">
+                    <Button variant="outline" className="rounded-full px-8">
+                      Цааш үзэх
+                    </Button>
+                  </div>
+                )}
               </div>
-            </>
+
+              <div className="lg:col-span-1">
+                <div className="sticky top-[180px] space-y-6">
+                  <TopStories posts={topStories} />
+                  <TrendingSidebar posts={posts.slice(5, 9)} categories={categories} />
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </main>

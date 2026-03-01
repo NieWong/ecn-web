@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen">
         <Header />
         <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center text-gray-600">Loading dashboard...</div>
+          <div className="text-center text-gray-600">Ачаалж байна...</div>
         </main>
         <Footer />
       </div>
@@ -179,11 +179,11 @@ export default function AdminDashboardPage() {
         <Header />
         <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="rounded-3xl border border-black/10 bg-white/90 p-8 text-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Admin Dashboard</h1>
-            <p className="mt-3 text-gray-600">Please log in to access admin tools.</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Админ медээлэл самбар</h1>
+            <p className="mt-3 text-gray-600">Админ хэрэгсэл харахын тулд нэвтэрнэ үү.</p>
             <div className="mt-6">
               <Link href="/login">
-                <Button>Go to Login</Button>
+                <Button>Нэвтрэх</Button>
               </Link>
             </div>
           </div>
@@ -199,11 +199,11 @@ export default function AdminDashboardPage() {
         <Header />
         <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="rounded-3xl border border-black/10 bg-white/90 p-8 text-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Access denied</h1>
-            <p className="mt-3 text-gray-600">You do not have permission to view this page.</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Хандах эрх үгүй</h1>
+            <p className="mt-3 text-gray-600">Та энэ хуудсыг үзэх эрхгүй байна.</p>
             <div className="mt-6">
               <Link href="/">
-                <Button variant="outline">Back to Home</Button>
+                <Button variant="outline">Нүүр хуудас руу</Button>
               </Link>
             </div>
           </div>
@@ -220,13 +220,13 @@ export default function AdminDashboardPage() {
       <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Admin</p>
-            <h1 className="mt-3 text-3xl font-semibold text-gray-900">Admin Dashboard</h1>
-            <p className="mt-2 text-gray-600">Review users, moderate content, and monitor key signals.</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Админ</p>
+            <h1 className="mt-3 text-3xl font-semibold text-gray-900">Админ медээлэл самбар</h1>
+            <p className="mt-2 text-gray-600">Хэрэглэгчдийг шалгах, контент зохицуулах, чухал хяналт хийх.</p>
           </div>
           <Button variant="outline" onClick={loadDashboard} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            Шинэчлэх
           </Button>
         </div>
 
@@ -239,51 +239,51 @@ export default function AdminDashboardPage() {
         <section className="mt-10">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">
             <ShieldAlert className="h-4 w-4" />
-            Site Metrics
+            Сайтын тоо ширхэг
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-2xl border border-black/10 bg-white/90 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Total users</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Нийт хэрэглэгч</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">{formatNumber(stats.totalUsers)}</p>
             </div>
             <div className="rounded-2xl border border-black/10 bg-white/90 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Active users</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Идэвхтэй хэрэглэгч</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">{formatNumber(stats.activeUsers)}</p>
             </div>
             <div className="rounded-2xl border border-black/10 bg-white/90 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Pending approvals</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Хүлээгдэж буй бүртгэл</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">{formatNumber(stats.pendingUsers)}</p>
             </div>
             <div className="rounded-2xl border border-black/10 bg-white/90 p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Total posts</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Нийт нийтлэл</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">{formatNumber(stats.totalPosts)}</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <p className="text-sm text-gray-500">Published posts</p>
+              <p className="text-sm text-gray-500">Нийтлэгдсэн</p>
               <p className="mt-2 text-2xl font-semibold text-gray-900">{formatNumber(stats.publishedPosts)}</p>
             </div>
           </div>
           {metricsNote && (
-            <p className="mt-3 text-xs text-gray-500">{metricsNote}</p>
+            <p className="mt-3 text-xs text-gray-500">Тоо ширхэг нь хамгийн сүүлийн {MAX_METRICS_SAMPLE} нийтлэлд үндэслэн.</p>
           )}
         </section>
 
         <section className="mt-12">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
             <Users className="h-4 w-4" />
-            User Approvals
+            Хэрэглэгчийн зөвшөөрөл
           </div>
           <div className="mt-4 rounded-xl border border-gray-200 bg-white">
             <div className="grid grid-cols-4 gap-4 border-b border-gray-200 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-              <span>User</span>
-              <span>Email</span>
-              <span>Requested</span>
-              <span>Actions</span>
+              <span>Хэрэглэгч</span>
+              <span>Имэйл</span>
+              <span>Хүссэн огноо</span>
+              <span>Үйлдэл</span>
             </div>
             {loading ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-500">Loading pending users...</div>
+              <div className="px-6 py-8 text-center text-sm text-gray-500">Хүлээгдэж буй хэрэглэгчдийг ачаалж байна...</div>
             ) : pendingUsers.length === 0 ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-500">No pending approvals.</div>
+              <div className="px-6 py-8 text-center text-sm text-gray-500">Хүлээгдэж буй хүсэлт байхгүй байна.</div>
             ) : (
               pendingUsers.map((pending) => (
                 <div
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
                   className="grid grid-cols-4 items-center gap-4 border-b border-gray-100 px-6 py-4 text-sm"
                 >
                   <div>
-                    <p className="font-medium text-gray-900">{pending.name || 'Unnamed user'}</p>
+                    <p className="font-medium text-gray-900">{pending.name || 'Нэргүй хэрэглэгч'}</p>
                     <p className="text-xs text-gray-500">ID {pending.id.slice(0, 8)}</p>
                   </div>
                   <p className="text-gray-700">{pending.email}</p>
@@ -303,7 +303,7 @@ export default function AdminDashboardPage() {
                       disabled={actionStates[pending.id]}
                     >
                       <CheckCircle className="h-4 w-4" />
-                      Approve
+                      Зөвшөөрөх
                     </Button>
                     <Button
                       size="sm"
@@ -311,7 +311,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handleRejectUser(pending.id)}
                       disabled={actionStates[pending.id]}
                     >
-                      Reject
+                      Татгалзах
                     </Button>
                   </div>
                 </div>
@@ -323,20 +323,20 @@ export default function AdminDashboardPage() {
         <section className="mt-12">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
             <FileText className="h-4 w-4" />
-            Content Moderation
+            Контент зохицуулалт
           </div>
           <div className="mt-4 rounded-xl border border-gray-200 bg-white">
             <div className="grid grid-cols-5 gap-4 border-b border-gray-200 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
-              <span>Post</span>
-              <span>Author</span>
-              <span>Status</span>
-              <span>Visibility</span>
-              <span>Actions</span>
+              <span>Нийтлэл</span>
+              <span>Зохиогч</span>
+              <span>Төлөв</span>
+              <span>Харагдац</span>
+              <span>Үйлдэл</span>
             </div>
             {loading ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-500">Loading moderation queue...</div>
+              <div className="px-6 py-8 text-center text-sm text-gray-500">Баталгаажуулах дараалал ачаалж байна...</div>
             ) : moderationPosts.length === 0 ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-500">No posts require review.</div>
+              <div className="px-6 py-8 text-center text-sm text-gray-500">Шалгах нийтлэл байхгүй байна.</div>
             ) : (
               moderationPosts.map((post) => (
                 <div
@@ -345,9 +345,9 @@ export default function AdminDashboardPage() {
                 >
                   <div>
                     <p className="font-medium text-gray-900">{post.title}</p>
-                    <p className="text-xs text-gray-500">Updated {formatDate(post.updatedAt)}</p>
+                    <p className="text-xs text-gray-500">Шинэчлэгдсэн {formatDate(post.updatedAt)}</p>
                   </div>
-                  <p className="text-gray-700">{post.author?.name || 'Unknown author'}</p>
+                  <p className="text-gray-700">{post.author?.name || 'Үл мэдэх зохиогч'}</p>
                   <span className="inline-flex w-fit items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
                     {post.status}
                   </span>
@@ -361,7 +361,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handlePublishPost(post.id)}
                       disabled={actionStates[post.id]}
                     >
-                      Publish
+                      Нийтлэх
                     </Button>
                     <Button
                       size="sm"
@@ -369,7 +369,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handleUnpublishPost(post.id)}
                       disabled={actionStates[post.id]}
                     >
-                      Unpublish
+                      Нуух
                     </Button>
                     <Button
                       size="sm"
@@ -377,7 +377,7 @@ export default function AdminDashboardPage() {
                       onClick={() => handleArchivePost(post.id)}
                       disabled={actionStates[post.id]}
                     >
-                      Archive
+                      Архивлах
                     </Button>
                   </div>
                 </div>
@@ -385,7 +385,7 @@ export default function AdminDashboardPage() {
             )}
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Moderation queue shows drafts, archived posts, and private posts (up to {MAX_MODERATION_LIST}).
+            Зохицуулалтын дараалалд ноорог, архивлагдсан, нууц нийтлэлүүд (max {MAX_MODERATION_LIST}) харагдана.
           </p>
         </section>
       </main>

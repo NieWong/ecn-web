@@ -130,12 +130,12 @@ export default function HealthCheckPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">System</p>
-            <h1 className="mt-2 font-serif text-3xl font-semibold text-gray-900">API Health Check</h1>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Систем</p>
+            <h1 className="mt-2 font-serif text-3xl font-semibold text-gray-900">API Эрүүл шалгалт</h1>
           </div>
           <Button onClick={checkHealth} className="flex items-center space-x-2 rounded-full bg-gray-900 text-white hover:bg-gray-800">
             <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
+            <span>Шинэчлэх</span>
           </Button>
         </div>
 
@@ -144,14 +144,14 @@ export default function HealthCheckPage() {
           <div className="flex items-start space-x-3">
             <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-blue-900">API Configuration</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-900">API тохиргоо</p>
               <p className="text-sm text-blue-700 mt-1">
                 Backend URL: <code className="bg-blue-100 px-2 py-0.5 rounded">
                   {process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api'}
                 </code>
               </p>
               <p className="text-sm text-blue-700 mt-1">
-                Make sure the backend is running on port 4000
+                Backend сервер 4000 порт дээр ажиллаж байгаа баталгаажуулаарай
               </p>
             </div>
           </div>
@@ -163,8 +163,8 @@ export default function HealthCheckPage() {
           <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Backend Server</h2>
-                <p className="text-sm text-gray-600">Connection to API server</p>
+                <h2 className="text-lg font-semibold text-gray-900">Backend сервер</h2>
+                <p className="text-sm text-gray-600">API сервертэй холболт</p>
               </div>
               <StatusIcon status={status.backend} />
             </div>
@@ -174,8 +174,8 @@ export default function HealthCheckPage() {
           <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Database</h2>
-                <p className="text-sm text-gray-600">Database connectivity</p>
+                <h2 className="text-lg font-semibold text-gray-900">Өгөгдлийн сан</h2>
+                <p className="text-sm text-gray-600">Өгөгдлийн санд холболт</p>
               </div>
               <StatusIcon status={status.database} />
             </div>
@@ -183,7 +183,7 @@ export default function HealthCheckPage() {
 
           {/* Endpoints Status */}
           <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">API Endpoints</h2>
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">API холбоосууд</h2>
             <div className="space-y-3">
               {status.endpoints.map((endpoint) => (
                 <div
@@ -208,15 +208,15 @@ export default function HealthCheckPage() {
         {/* Troubleshooting Guide */}
         {(status.backend === 'error' || status.endpoints.some(e => e.status === 'error')) && (
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6">
-            <h3 className="font-semibold text-red-900 mb-3">Troubleshooting Steps</h3>
+            <h3 className="font-semibold text-red-900 mb-3">Асуудал шийдвэрлэх алхамууд</h3>
             <ol className="list-decimal list-inside space-y-2 text-sm text-red-800">
-              <li>Make sure the backend server is running: <code className="bg-red-100 px-2 py-0.5 rounded">cd D:\dev\ecn-api && npm run dev</code></li>
-              <li>Check if the backend is on port 4000</li>
-              <li>Verify the database is connected (check backend console)</li>
-              <li>Run database migrations: <code className="bg-red-100 px-2 py-0.5 rounded">npx prisma db push</code></li>
-              <li>Seed the database with test data if it's empty</li>
-              <li>Check backend console for error details</li>
-              <li>See <code className="bg-red-100 px-2 py-0.5 rounded">BACKEND_TROUBLESHOOTING.md</code> for more help</li>
+              <li>Backend сервер ажиллаж байгаа баталгаажуулаарай: <code className="bg-red-100 px-2 py-0.5 rounded">cd D:\dev\ecn-api && npm run dev</code></li>
+              <li>Backend 4000 порт дээр ажиллаж байгаа шалгаарай</li>
+              <li>Өгөгдлийн сан холбогдсон эсэхийг баталгаажуулаарай (backend console шалгаарай)</li>
+              <li>Өгөгдлийн сангийн migration ажиллуулаарай: <code className="bg-red-100 px-2 py-0.5 rounded">npx prisma db push</code></li>
+              <li>Өгөгдөл хоосон бол туршилтын өгөгдөл нэмээрэй</li>
+              <li>Backend console дээрх алдааны дэлгэрэнгүй мэдээллийг шалгаарай</li>
+              <li>Дэлгэрэнгүй мэдээллийн тулд <code className="bg-red-100 px-2 py-0.5 rounded">BACKEND_TROUBLESHOOTING.md</code> үзээрэй</li>
             </ol>
           </div>
         )}
@@ -229,11 +229,11 @@ export default function HealthCheckPage() {
             <div className="flex items-center space-x-3">
               <Check className="h-5 w-5 text-green-600" />
               <p className="font-medium text-green-900">
-                All systems operational! ✅
+                Бүх систем хэвийн ажиллаж байна! ✅
               </p>
             </div>
             <p className="mt-2 text-sm text-green-700">
-              The backend API is working correctly. You can now use the application.
+              Backend API зөв ажиллаж байна. Апп-аа хэрэглэх боломжтой.
             </p>
           </div>
         )}

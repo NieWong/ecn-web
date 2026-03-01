@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, User as UserIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, User as UserIcon, AlertCircle, CheckCircle, ArrowRight, Sparkles, PenSquare, BookOpen, Users } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,9 +29,9 @@ export default function RegisterPage() {
       console.error('Registration error:', err);
       
       if (err.response?.status === 409) {
-        setError('An account with this email already exists.');
+        setError('Энэ имэйл хаягаар бүртгэл аль хэдийн үүссэн байна.');
       } else {
-        setError('An error occurred. Please try again.');
+        setError('Алдаа гарлаа. Дахин оролдоно уу.');
       }
     } finally {
       setIsLoading(false);
@@ -40,36 +40,36 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-green-200 bg-green-50">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            <h2 className="mt-6 font-serif text-3xl font-semibold tracking-tight text-gray-900">
-              Registration submitted
+      <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-gray-50 to-white">
+        <div className="w-full max-w-md space-y-8 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-green-100">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+              Бүртгэл амжилттай!
             </h2>
-            <div className="mt-4 rounded-3xl border border-green-200 bg-green-50 p-6">
-              <p className="text-sm text-gray-700 mb-4">
-                Thank you for registering. Your account is pending approval.
+            <div className="mt-6 premium-card p-6 text-left">
+              <p className="text-sm text-gray-700 mb-3">
+                Бүртгүүлсэнд баярлалаа. Таны хүсэлт админы зөвшөөрлийг хүлээж байна.
               </p>
               <p className="text-sm text-gray-600">
-                You'll receive a notification once an admin approves your account.
-                Then you can set your password and start writing.
+                Зөвшөөрөгдсөн тохиолдолд танд мэдэгдэх болно.
+                Дараа нь нууц үгээ тохируулж нийтлэл бичиж эхлэх боломжтой.
               </p>
             </div>
-            <div className="mt-6 space-y-3">
-              <Link href="/">
-                <Button className="w-full rounded-full bg-gray-900 text-white hover:bg-gray-800">
-                  Back to Home
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" className="w-full rounded-full">
-                  Go to Sign In
-                </Button>
-              </Link>
-            </div>
+          </div>
+          <div className="space-y-3">
+            <Link href="/">
+              <Button className="w-full btn-primary h-12">
+                Нүүр хуудас руу
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" className="w-full rounded-xl h-12 border-gray-200">
+                Нэвтрэх
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -77,115 +77,193 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center justify-center space-x-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-black/10 bg-white text-sm font-semibold">
-              ECN
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#e63946]/20 via-transparent to-[#f472b6]/10" />
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
+        
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl transition-transform group-hover:scale-105">
+              E
+            </div>
+            <div>
+              <span className="text-2xl font-bold tracking-tight text-white">ECN</span>
+              <span className="text-2xl font-light tracking-tight text-white/60">.Club</span>
             </div>
           </Link>
-          <h2 className="mt-6 font-serif text-3xl font-semibold tracking-tight text-gray-900">
-            Join ECN News
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Start your journey as a writer today.
-          </p>
+          
+          <div className="space-y-8">
+            <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+              Эдийн засагчдын клубт{' '}
+              <span className="gradient-text">нэгдээрэй</span>
+            </h1>
+            
+            <div className="space-y-4">
+              {[
+                { icon: PenSquare, text: 'Нийтлэл бичиж, мэдлэгээ хуваалцаарай' },
+                { icon: BookOpen, text: 'Академик сургалт, хичээлд хамрагдаарай' },
+                { icon: Users, text: '49 гишүүнтэй клубт нэгдээрэй' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-white/80">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <div className="flex -space-x-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e63946] to-[#ff6b6b] ring-2 ring-[#0a0a0a]"
+                />
+              ))}
+            </div>
+            <p className="text-sm text-white/50">
+              СЭЗИС-ийн дэргэдэх клуб
+            </p>
+          </div>
         </div>
+      </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-2xl bg-red-50 border border-red-200 p-4">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 text-red-400" />
-                <div className="ml-3">
+      {/* Right Panel - Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-12 bg-white">
+        <div className="w-full max-w-md space-y-8">
+          {/* Mobile Logo */}
+          <div className="lg:hidden text-center">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl">
+                E
+              </div>
+            </Link>
+          </div>
+
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#e63946]/10 px-3 py-1.5 text-xs font-semibold text-[#e63946] mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Үнэгүй гишүүнчлэл</span>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+              Бүртгүүлэх
+            </h2>
+            <p className="mt-3 text-gray-600">
+              Өнөөдөр зохиогчийн аяллаа эхлүүлээрэй.
+            </p>
+          </div>
+
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="space-y-4 rounded-3xl border border-black/10 bg-white/90 px-6 py-8">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email address <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-black/10 bg-white py-3 pl-11 pr-4 text-gray-900 placeholder-gray-400 focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/10"
-                  placeholder="you@example.com"
-                />
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Имэйл хаяг <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input-premium ml-12"
+                    placeholder="таны@имэйл.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Бүтэн нэр <span className="text-gray-400 text-xs">(заавал биш)</span>
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="input-premium ml-12"
+                    placeholder="Таны нэр"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full name <span className="text-gray-400 text-xs">(optional)</span>
-              </label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-2xl border border-black/10 bg-white py-3 pl-11 pr-4 text-gray-900 placeholder-gray-400 focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/10"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
+            <div className="rounded-xl bg-blue-50 border border-blue-100 p-4">
               <p className="text-xs text-blue-800">
-                <strong>Note:</strong> Your registration will be reviewed by an admin. 
-                You'll be able to set your password after approval.
+                <strong>Анхаар:</strong> Таны бүртгэлийг админ хянах болно. 
+                Зөвшөөрөгдсөний дараа нууц үгээ тохируулах боломжтой.
               </p>
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-gray-900 py-6 text-base font-medium text-white hover:bg-gray-800"
+              className="w-full btn-accent h-12 text-base"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Submitting...
+                  Бүртгэж байна...
                 </>
               ) : (
-                'Create Account'
+                <>
+                  Бүртгүүлэх
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
-          </div>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
-            <Link href="/login" className="font-medium text-gray-900 hover:underline">
-              Sign in
-            </Link>
-          </div>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-4 text-gray-500">эсвэл</span>
+              </div>
+            </div>
 
-          <p className="text-center text-xs text-gray-500">
-            By signing up, you agree to our{' '}
-            <Link href="/terms" className="underline hover:text-gray-900">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link href="/privacy" className="underline hover:text-gray-900">
-              Privacy Policy
-            </Link>
-          </p>
-        </form>
+            <div className="space-y-3 text-center text-sm">
+              <p>
+                <span className="text-gray-600">Бүртгэлтэй юу? </span>
+                <Link href="/login" className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors">
+                  Нэвтрэх
+                </Link>
+              </p>
+            </div>
+
+            <p className="text-center text-xs text-gray-500">
+              Бүртгүүлснээр та манай{' '}
+              <Link href="/terms" className="text-gray-700 hover:text-[#e63946] transition-colors">
+                Үйлчилгээний нөхцөл
+              </Link>{' '}
+              болон{' '}
+              <Link href="/privacy" className="text-gray-700 hover:text-[#e63946] transition-colors">
+                Нууцлалын бодлого
+              </Link>
+              -тай зөвшөөрч байна
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );

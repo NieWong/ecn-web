@@ -18,6 +18,11 @@ export const usersAPI = {
     return response.data;
   },
 
+  listPublicProfiles: async () => {
+    const response = await apiClient.get<PublicProfile[]>('/users/public');
+    return response.data;
+  },
+
   // Admin only
   listUsers: async (params?: { isActive?: boolean }) => {
     const response = await apiClient.get<User[]>('/users', { params });

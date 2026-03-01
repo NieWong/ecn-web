@@ -2,31 +2,101 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { filesAPI, postsAPI } from '@/lib/api';
-import { generateSlug } from '@/lib/helpers';
-import { PostStatus, Visibility } from '@/lib/types';
-import { ImagePlus, Loader2 } from 'lucide-react';
+import { postsAPI, categoriesAPI } from '@/lib/api';
+import { uploadArticleCover } from '@/lib/api/local-upload';
+import { generateSlug, getImageUrl, getCoverImageUrl } from '@/lib/helpers';
+import { PostStatus, Visibility, Post, Category } from '@/lib/types';
+import { ImagePlus, Loader2, PenSquare, Eye, EyeOff, Link2, CheckCircle, AlertCircle, Save, Send } from 'lucide-react';
+
+// Dynamically import RichEditor to avoid SSR issues with Quill
+const RichEditor = dynamic(() => import('@/components/ui/rich-editor').then(mod => ({ default: mod.RichEditor })), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[400px] rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+    </div>
+  ),
+});
 
 export default function WritePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
   const { user, isAuthenticated } = useAuthStore();
 
+  const [isLoadingPost, setIsLoadingPost] = useState(!!editId);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [summary, setSummary] = useState('');
   const [content, setContent] = useState('');
   const [visibility, setVisibility] = useState<Visibility>(Visibility.PUBLIC);
-  const [coverFileId, setCoverFileId] = useState<string | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverImagePath, setCoverImagePath] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [slugLocked, setSlugLocked] = useState(false);
+
+  // Load categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await categoriesAPI.list();
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Load post for editing
+  useEffect(() => {
+    if (editId) {
+      loadPostForEditing(editId);
+    }
+  }, [editId]);
+
+  const loadPostForEditing = async (id: string) => {
+    try {
+      setIsLoadingPost(true);
+      const post = await postsAPI.get(id);
+      setEditingPost(post);
+      setTitle(post.title);
+      setSlug(post.slug);
+      setSummary(post.summary || '');
+      setContent(post.contentHtml || '');
+      setVisibility(post.visibility);
+      // Load cover image - prefer local path, fallback to File object
+      if (post.coverImagePath) {
+        setCoverImagePath(post.coverImagePath);
+      } else if (post.coverFile) {
+        setCoverImagePath(getImageUrl(post.coverFile));
+      }
+      // Load categories
+      if (post.categories) {
+        setSelectedCategoryIds(post.categories.map(c => c.id));
+      }
+      setSlugLocked(true);
+    } catch (err) {
+      console.error('Failed to load post for editing:', err);
+      setError('Failed to load article for editing.');
+    } finally {
+      setIsLoadingPost(false);
+    }
+  };
 
   useEffect(() => {
     if (!slugLocked) {
@@ -37,12 +107,14 @@ export default function WritePage() {
   const handleCoverUpload = async (file: File) => {
     try {
       setError(null);
-      const uploaded = await filesAPI.upload(file, Visibility.PUBLIC);
-      setCoverFileId(uploaded.id);
-      setCoverPreview(URL.createObjectURL(file));
+      setIsUploadingCover(true);
+      const path = await uploadArticleCover(file);
+      setCoverImagePath(path);
     } catch (err) {
       console.error('Cover upload failed:', err);
       setError('Failed to upload cover image. Please try again.');
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -62,23 +134,40 @@ export default function WritePage() {
       setError(null);
       setSuccess(null);
 
-      await postsAPI.create({
-        title: title.trim(),
-        slug: slug.trim() || generateSlug(title),
-        summary: summary.trim() || undefined,
-        contentHtml: content,
-        contentJson: {},
-        status,
-        visibility,
-        coverFileId: coverFileId || undefined,
-        categoryIds: [],
-      });
+      if (editingPost) {
+        // Update existing post
+        await postsAPI.update(editingPost.id, {
+          title: title.trim(),
+          slug: slug.trim() || generateSlug(title),
+          summary: summary.trim() || undefined,
+          contentHtml: content,
+          contentJson: {},
+          status,
+          visibility,
+          coverImagePath: coverImagePath || undefined,
+          categoryIds: selectedCategoryIds,
+        });
+        setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай шинэчлэгдлээ!' : 'Ноорог хадгалагдлаа!');
+      } else {
+        // Create new post
+        await postsAPI.create({
+          title: title.trim(),
+          slug: slug.trim() || generateSlug(title),
+          summary: summary.trim() || undefined,
+          contentHtml: content,
+          contentJson: {},
+          status,
+          visibility,
+          coverImagePath: coverImagePath || undefined,
+          categoryIds: selectedCategoryIds,
+        });
+        setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай нийтлэгдлээ!' : 'Ноорог хадгалагдлаа!');
+      }
 
-      setSuccess(status === PostStatus.PUBLISHED ? 'Article published.' : 'Draft saved.');
       setTimeout(() => router.push('/'), 1200);
     } catch (err) {
       console.error('Save article failed:', err);
-      setError('Failed to save article. Please try again.');
+      setError('Нийтлэл хадгалахад алдаа гарлаа.');
     } finally {
       setIsSaving(false);
     }
@@ -86,15 +175,18 @@ export default function WritePage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#fafafa]">
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="max-w-md rounded-3xl border border-black/10 bg-white/90 p-8 text-center">
-            <h1 className="font-serif text-2xl font-semibold text-gray-900">Write an article</h1>
-            <p className="mt-3 text-sm text-gray-600">Sign in to start writing and publishing.</p>
+          <div className="premium-card max-w-md p-8 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+              <PenSquare className="h-8 w-8 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Нийтлэл бичих</h1>
+            <p className="mt-3 text-gray-600">Нэвтрж нийтлэл бичиж эхлээрэй.</p>
             <div className="mt-6">
               <Link href="/login">
-                <Button className="rounded-full bg-gray-900 text-white hover:bg-gray-800">Sign In</Button>
+                <Button className="btn-primary">Нэвтрэх</Button>
               </Link>
             </div>
           </div>
@@ -105,93 +197,141 @@ export default function WritePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <Header />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
+          {/* Page Header */}
+          <div className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#e63946] mb-2">{editingPost ? 'Засах' : 'Бүтээх'}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{editingPost ? 'Нийтлэлийг засах' : 'Шинэ нийтлэл бичих'}</h1>
+          </div>
+
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            {/* Main Editor */}
             <div className="flex-1 space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
+              {/* Action Bar */}
+              <div className="premium-card p-4 flex flex-wrap items-center gap-3">
                 <Button
-                  className="rounded-full bg-gray-900 text-white hover:bg-gray-800"
-                  disabled={isSaving}
-                  onClick={() => handleSave(PostStatus.DRAFT)}
-                >
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save draft'}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="rounded-full"
+                  className="btn-primary"
                   disabled={isSaving}
                   onClick={() => handleSave(PostStatus.PUBLISHED)}
                 >
-                  Publish
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                  Нийтлэх
                 </Button>
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{visibility}</p>
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={isSaving}
+                  onClick={() => handleSave(PostStatus.DRAFT)}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Ноорог хадгалах
+                </Button>
+                <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
+                  {visibility === Visibility.PUBLIC ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                  <span className="capitalize">{visibility.toLowerCase()}</span>
+                </div>
               </div>
 
+              {/* Messages */}
               {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                  {error}
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}
 
               {success && (
-                <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                  {success}
+                <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-start gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <p className="text-sm text-green-700">{success}</p>
                 </div>
               )}
 
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <label className="text-xs uppercase tracking-[0.2em] text-gray-500">Title</label>
+              {/* Title */}
+              <div className="premium-card p-6">
+                <label className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3 block">
+                  Гарчиг
+                </label>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Write a clean, direct headline"
-                  className="mt-3 w-full border-b border-black/10 bg-transparent pb-3 text-3xl font-serif text-gray-900 outline-none"
+                  placeholder="Нийтлэлийн гарчиг..."
+                  className="w-full border-b-2 border-gray-200 bg-transparent pb-4 text-3xl font-bold text-gray-900 placeholder:text-gray-300 outline-none focus:border-[#e63946] transition-colors"
                 />
               </div>
 
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <label className="text-xs uppercase tracking-[0.2em] text-gray-500">Summary</label>
+              {/* Summary */}
+              <div className="premium-card p-6">
+                <label className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3 block">
+                  Товч агуулга
+                </label>
                 <textarea
                   value={summary}
                   onChange={(event) => setSummary(event.target.value)}
                   rows={3}
-                  placeholder="Give readers a one-paragraph overview."
-                  className="mt-3 w-full resize-none rounded-2xl border border-black/10 bg-white p-4 text-sm text-gray-900 outline-none focus:border-black/40 focus:ring-2 focus:ring-black/10"
+                  placeholder="Богино тайлбар..."
+                  className="input-premium resize-none"
                 />
               </div>
 
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <label className="text-xs uppercase tracking-[0.2em] text-gray-500">Story</label>
-                <textarea
+              {/* Content */}
+              <div className="premium-card p-6">
+                <label className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3 block">
+                  Контент
+                </label>
+                <RichEditor
                   value={content}
-                  onChange={(event) => setContent(event.target.value)}
-                  rows={16}
-                  placeholder="Start writing your story..."
-                  className="mt-3 w-full resize-none rounded-2xl border border-black/10 bg-white p-4 text-base text-gray-900 outline-none focus:border-black/40 focus:ring-2 focus:ring-black/10"
+                  onChange={setContent}
+                  placeholder="Нийтлэлээ бичиж эхлээрэй..."
                 />
               </div>
             </div>
 
+            {/* Sidebar */}
             <aside className="w-full space-y-6 lg:w-[320px]">
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Cover image</p>
-                <div className="mt-4 rounded-2xl border border-dashed border-black/20 bg-white p-4 text-center">
-                  {coverPreview ? (
-                    <img src={coverPreview} alt="Cover preview" className="h-40 w-full rounded-xl object-cover" />
+              {/* Cover Image */}
+              <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Нүүрний зураг</p>
+                <div 
+                  className={`rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center hover:border-[#e63946] hover:bg-red-50/30 transition-colors cursor-pointer ${isUploadingCover ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => document.getElementById('cover-upload')?.click()}
+                >
+                  {isUploadingCover ? (
+                    <div className="flex flex-col items-center gap-3 py-6 text-gray-400">
+                      <Loader2 className="h-10 w-10 animate-spin text-[#e63946]" />
+                      <span className="text-sm font-medium">Байршуулж байна...</span>
+                    </div>
+                  ) : coverImagePath ? (
+                    <img src={coverImagePath} alt="Cover preview" className="h-40 w-full rounded-lg object-cover" />
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-sm text-gray-500">
-                      <ImagePlus className="h-6 w-6" />
-                      Upload a wide image
+                    <div className="flex flex-col items-center gap-3 py-6 text-gray-400">
+                      <ImagePlus className="h-10 w-10" />
+                      <span className="text-sm font-medium">Зураг оруулах</span>
+                      <span className="text-xs">Санал болгох: 1200 x 630px</span>
                     </div>
                   )}
                 </div>
+                {coverImagePath && (
+                  <button
+                    type="button"
+                    onClick={() => setCoverImagePath(null)}
+                    className="mt-2 text-xs text-red-600 hover:text-red-800"
+                  >
+                    Зураг устгах
+                  </button>
+                )}
                 <input
+                  id="cover-upload"
                   type="file"
                   accept="image/*"
-                  className="mt-4 w-full text-sm"
+                  className="hidden"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) {
@@ -201,39 +341,94 @@ export default function WritePage() {
                 />
               </div>
 
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Slug</p>
-                <input
-                  value={slug}
-                  onChange={(event) => {
-                    setSlug(event.target.value);
-                    setSlugLocked(true);
-                  }}
-                  className="mt-3 w-full rounded-2xl border border-black/10 bg-white px-4 py-2 text-sm text-gray-900 outline-none focus:border-black/40 focus:ring-2 focus:ring-black/10"
-                />
-                <p className="mt-2 text-xs text-gray-500">Auto-generated from the title unless edited.</p>
+              {/* Slug */}
+              <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">URL Холбоос</p>
+                <div className="relative">
+                  <Link2 className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={slug}
+                    onChange={(event) => {
+                      setSlug(event.target.value);
+                      setSlugLocked(true);
+                    }}
+                    className="input-premium pl-12"
+                  />
+                </div>
+                <p className="mt-3 text-xs text-gray-500">Гарчигаас автоматаар үүсгэгдэнэ.</p>
               </div>
 
-              <div className="rounded-3xl border border-black/10 bg-white/90 p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Visibility</p>
-                <div className="mt-3 flex flex-col gap-2">
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
+              {/* Visibility */}
+              <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Харагдац</p>
+                <div className="space-y-3">
+                  <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-colors ${
+                    visibility === Visibility.PUBLIC 
+                      ? 'border-[#e63946] bg-red-50/50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
                     <input
                       type="radio"
                       checked={visibility === Visibility.PUBLIC}
                       onChange={() => setVisibility(Visibility.PUBLIC)}
+                      className="sr-only"
                     />
-                    Public
+                    <Eye className={`h-5 w-5 ${visibility === Visibility.PUBLIC ? 'text-[#e63946]' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="font-medium text-gray-900">Олонд нээлттэй</p>
+                      <p className="text-xs text-gray-500">Хэн ч унших боломжтой</p>
+                    </div>
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-colors ${
+                    visibility === Visibility.PRIVATE 
+                      ? 'border-[#e63946] bg-red-50/50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
                     <input
                       type="radio"
                       checked={visibility === Visibility.PRIVATE}
                       onChange={() => setVisibility(Visibility.PRIVATE)}
+                      className="sr-only"
                     />
-                    Members only
+                    <EyeOff className={`h-5 w-5 ${visibility === Visibility.PRIVATE ? 'text-[#e63946]' : 'text-gray-400'}`} />
+                    <div>
+                      <p className="font-medium text-gray-900">Гишүүдэд зориулсан</p>
+                      <p className="text-xs text-gray-500">Зөвхөн нэвтэрсэн хүмүүс унших</p>
+                    </div>
                   </label>
                 </div>
+              </div>
+
+              {/* Categories */}
+              <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Ангилал</p>
+                {isLoadingCategories ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                ) : categories.length === 0 ? (
+                  <p className="text-sm text-gray-500">Ангилал алга</p>
+                ) : (
+                  <div className="space-y-2">
+                    {categories.map((category) => (
+                      <label key={category.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategoryIds.includes(category.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCategoryIds([...selectedCategoryIds, category.id]);
+                            } else {
+                              setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== category.id));
+                            }
+                          }}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm font-medium text-gray-900">{category.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             </aside>
           </div>

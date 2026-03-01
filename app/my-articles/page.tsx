@@ -9,7 +9,7 @@ import { postsAPI } from '@/lib/api';
 import { Post } from '@/lib/types';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PenSquare, Plus, FileText } from 'lucide-react';
 
 export default function MyArticlesPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -39,15 +39,18 @@ export default function MyArticlesPage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#fafafa]">
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
-          <div className="max-w-md rounded-3xl border border-black/10 bg-white/90 p-8 text-center">
-            <h1 className="font-serif text-2xl font-semibold text-gray-900">My articles</h1>
-            <p className="mt-3 text-sm text-gray-600">Sign in to manage your drafts and published stories.</p>
+          <div className="premium-card max-w-md p-8 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+              <FileText className="h-8 w-8 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Миний нийтлэлүүд</h1>
+            <p className="mt-3 text-gray-600">Нэвтрэж ноорог ба нийтлэлүүдээ засах.</p>
             <div className="mt-6">
               <Link href="/login">
-                <Button className="rounded-full bg-gray-900 text-white hover:bg-gray-800">Sign In</Button>
+                <Button className="btn-primary">Нэвтрэх</Button>
               </Link>
             </div>
           </div>
@@ -58,32 +61,51 @@ export default function MyArticlesPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <Header />
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Library</p>
-            <h1 className="font-serif text-3xl font-semibold text-gray-900">My articles</h1>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#e63946] mb-2">Миний</p>
+              <h1 className="text-3xl font-bold text-gray-900">Миний нийтлэлүүд</h1>
+            </div>
+            <Link href="/write">
+              <Button className="btn-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Шинэ бичих
+              </Button>
+            </Link>
           </div>
 
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <Loader2 className="h-10 w-10 animate-spin text-[#e63946] mx-auto" />
+                <p className="mt-4 text-sm text-gray-500">Ачаалж байна...</p>
+              </div>
             </div>
           ) : error ? (
-            <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}
             </div>
           ) : posts.length === 0 ? (
-            <div className="mt-8 rounded-3xl border border-black/10 bg-white/90 p-8 text-center">
-              <p className="text-gray-600">No articles yet.</p>
-              <Link href="/write" className="mt-4 inline-block text-sm font-semibold text-gray-900">
-                Start your first story
+            <div className="premium-card p-12 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
+                <PenSquare className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Нийтлэл байхгүй байна</h3>
+              <p className="text-gray-600 mb-6">Анхны нийтлэлээ бичиж эхлээрэй.</p>
+              <Link href="/write">
+                <Button className="btn-primary">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Анхны нийтлэл бичих
+                </Button>
               </Link>
             </div>
           ) : (
-            <div className="mt-6 space-y-2">
+            <div className="space-y-4">
               {posts.map((post) => (
                 <ArticleCard key={post.id} post={post} />
               ))}
