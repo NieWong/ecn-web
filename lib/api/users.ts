@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { User, PublicProfile, UpdateProfileRequest } from '@/lib/types';
+import { User, PublicProfile, UpdateProfileRequest, MembershipLevel, Role } from '@/lib/types';
 
 export const usersAPI = {
   getProfile: async (id?: string) => {
@@ -41,6 +41,18 @@ export const usersAPI = {
 
   deactivate: async (id: string) => {
     const response = await apiClient.post<User>(`/users/${id}/deactivate`);
+    return response.data;
+  },
+
+  // Admin: Update user's membership level
+  updateMembershipLevel: async (id: string, membershipLevel: MembershipLevel) => {
+    const response = await apiClient.patch<User>(`/users/${id}/membership-level`, { membershipLevel });
+    return response.data;
+  },
+
+  // Admin: Update user's role
+  updateRole: async (id: string, role: Role) => {
+    const response = await apiClient.patch<User>(`/users/${id}/role`, { role });
     return response.data;
   },
 };

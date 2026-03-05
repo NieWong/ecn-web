@@ -10,7 +10,7 @@ import { PublicProfile, Post, PostStatus } from '@/lib/types';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { Loader2, Globe, Twitter, Linkedin, Eye, User, ArrowLeft, PenSquare, Settings } from 'lucide-react';
+import { Loader2, Globe, Twitter, Linkedin, Eye, User, ArrowLeft, PenSquare, Settings, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -20,6 +20,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,12 +46,24 @@ export default function ProfilePage() {
   const loadUserPosts = async () => {
     try {
       setIsLoading(true);
-      const data = await postsAPI.list({
+      const publishedData = await postsAPI.list({
         authorId: userId,
         status: PostStatus.PUBLISHED,
         sort: 'PUBLISHED_AT_DESC',
       });
-      setPosts(data);
+      setPosts(publishedData);
+
+      // Load pending posts if this is the user's own profile
+      if (isOwnProfile) {
+        const pendingData = await postsAPI.list({
+          authorId: userId,
+          status: PostStatus.DRAFT,
+          sort: 'CREATED_AT_DESC',
+        });
+        // Filter for unapproved posts only
+        const unapproved = pendingData.filter((post: any) => !post.isApproved);
+        setPendingPosts(unapproved);
+      }
     } catch (err) {
       console.error('Failed to load posts:', err);
     } finally {
@@ -194,6 +207,57 @@ export default function ProfilePage() {
             </div>
           </div>
         </section>
+
+        {/* Pending Articles Section - Only for own profile */}
+        {isOwnProfile && pendingPosts.length > 0 && (
+          <section className="py-16 bg-orange-50/50">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-orange-600 mb-1">Хүлээлтэй</p>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Баталгаажаалгахыг хүлээж байгаа нийтлэлүүд
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">Админ баталгаажуулах хүртлээ эдгээр нийтлэл нөлөөллөөгүй харагдана.</p>
+                </div>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-sm font-semibold text-orange-700">
+                  <Clock className="h-4 w-4" />
+                  {pendingPosts.length} нийтлэл
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {pendingPosts.map((post) => (
+                  <Link key={post.id} href={`/write?edit=${post.id}`}>
+                    <div className="premium-card p-6 hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
+                      {post.coverImagePath && (
+                        <img
+                          src={post.coverImagePath}
+                          alt={post.title}
+                          className="w-full h-40 object-cover rounded-lg mb-4"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs font-semibold uppercase tracking-wide text-orange-600">Баталгаажаалгахыг хүлээж байна</p>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">{post.title}</h3>
+                        {post.summary && (
+                          <p className="text-sm text-gray-600 line-clamp-2 mb-4">{post.summary}</p>
+                        )}
+                      </div>
+                      <Button className="w-full mt-4" variant="outline">
+                        <PenSquare className="h-4 w-4 mr-2" />
+                        Засах
+                      </Button>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Articles Section */}
         <section className="py-16">

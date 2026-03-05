@@ -4,6 +4,40 @@ export enum Role {
   USER = "USER"
 }
 
+export enum MembershipLevel {
+  REGULAR_USER = "REGULAR_USER",
+  MEMBER = "MEMBER",
+  HONORARY_MEMBER = "HONORARY_MEMBER",
+  BOARD_MEMBER = "BOARD_MEMBER",
+  ADMIN_MEMBER = "ADMIN_MEMBER"
+}
+
+export const MembershipLevelLabels: Record<MembershipLevel, string> = {
+  [MembershipLevel.REGULAR_USER]: "Энгийн хэрэглэгч",
+  [MembershipLevel.MEMBER]: "Гишүүн",
+  [MembershipLevel.HONORARY_MEMBER]: "Хүндэт Гишүүн",
+  [MembershipLevel.BOARD_MEMBER]: "Удирдах зөвлөлийн Гишүүн",
+  [MembershipLevel.ADMIN_MEMBER]: "Админ"
+};
+
+export const MembershipLevelLabelsEn: Record<MembershipLevel, string> = {
+  [MembershipLevel.REGULAR_USER]: "Regular User",
+  [MembershipLevel.MEMBER]: "Member",
+  [MembershipLevel.HONORARY_MEMBER]: "Honorary Member",
+  [MembershipLevel.BOARD_MEMBER]: "Board Member",
+  [MembershipLevel.ADMIN_MEMBER]: "Admin"
+};
+
+export enum NotificationType {
+  ARTICLE_SUBMITTED = "ARTICLE_SUBMITTED",
+  ARTICLE_APPROVED = "ARTICLE_APPROVED",
+  ARTICLE_REJECTED = "ARTICLE_REJECTED",
+  ARTICLE_COMMENTED = "ARTICLE_COMMENTED",
+  MEMBERSHIP_CHANGED = "MEMBERSHIP_CHANGED",
+  USER_APPROVED = "USER_APPROVED",
+  SYSTEM = "SYSTEM"
+}
+
 export enum PostStatus {
   DRAFT = "DRAFT",
   PUBLISHED = "PUBLISHED",
@@ -43,6 +77,7 @@ export interface User {
   name: string | null;
   role: Role;
   isActive: boolean;
+  membershipLevel: MembershipLevel;
   profilePictureId: string | null;
   profilePicture: File | null;
   profilePicturePath: string | null;
@@ -57,6 +92,19 @@ export interface User {
   website: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Notification Interface
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  isRead: boolean;
+  postId: string | null;
+  userId: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
 }
 
 // Category Interface
@@ -85,6 +133,17 @@ export interface Post {
   contentHtml: string | null;
   status: PostStatus;
   visibility: Visibility;
+  // Approval workflow
+  isApproved: boolean;
+  approvedAt: string | null;
+  approvedById: string | null;
+  approvedBy?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+  adminComment: string | null;
+  // Relations
   authorId: string;
   author?: User;
   coverFileId: string | null;

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Facebook, Twitter, Linkedin, Mail, Youtube, Instagram, Rss, ArrowUpRight } from 'lucide-react';
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getUTCFullYear();
 
   const footerLinks = {
     explore: [
@@ -20,10 +20,6 @@ export function Footer() {
       { label: 'Гишүүн болох', href: '/register' },
       { label: 'Холбоо барих', href: '/contact' },
     ],
-    legal: [
-      { label: 'Үйлчилгээний нөхцөл', href: '/terms' },
-      { label: 'Нууцлалын бодлого', href: '/privacy' },
-    ],
   };
 
   const socialLinks = [
@@ -36,8 +32,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-[#0a0a0a] text-white">
-      {/* Newsletter Section */}
+    <footer suppressHydrationWarning className="bg-[#0a0a0a] text-white">
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
@@ -63,10 +58,8 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Main Footer */}
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-6">
-          {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl transition-transform group-hover:scale-105">
@@ -82,7 +75,6 @@ export function Footer() {
               Монгол оюунаар дэлхийг тэтгэнэ.
             </p>
             
-            {/* Social Links */}
             <div className="mt-8 flex gap-2">
               {socialLinks.map((social) => (
                 <a
@@ -99,7 +91,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links */}
           <div className="lg:col-span-4">
             <div className="grid gap-8 sm:grid-cols-3">
               <div>
@@ -140,7 +131,7 @@ export function Footer() {
                 </ul>
               </div>
 
-              <div>
+              {/* <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40">
                   Бусад
                 </h4>
@@ -157,12 +148,11 @@ export function Footer() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-white/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs text-white/40">

@@ -73,4 +73,22 @@ export const postsAPI = {
     const response = await apiClient.delete<Post>(`/posts/${id}/cover`);
     return response.data;
   },
+
+  // Admin: List posts pending approval
+  listPendingApproval: async () => {
+    const response = await apiClient.get<Post[]>('/posts/pending-approval');
+    return response.data;
+  },
+
+  // Admin: Approve a post
+  approve: async (id: string) => {
+    const response = await apiClient.post<Post>(`/posts/${id}/approve`);
+    return response.data;
+  },
+
+  // Admin: Reject a post with reason
+  reject: async (id: string, reason: string) => {
+    const response = await apiClient.post<Post>(`/posts/${id}/reject`, { reason });
+    return response.data;
+  },
 };

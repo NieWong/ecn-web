@@ -25,14 +25,18 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/');
     } catch (err: any) {
-      console.error('Login error:', err);
+      const status = err?.response?.status;
+
+      if (!status || status >= 500) {
+        console.error('Login error:', err);
+      }
       
-      if (err.response?.status === 403) {
+      if (status === 403) {
         setError('Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.');
-      } else if (err.response?.status === 400 && err.response?.data?.message?.includes('password')) {
+      } else if (status === 400 && err.response?.data?.message?.includes('password')) {
         setError('Эхлээд нууц үгээ тохируулаарай.');
         setTimeout(() => router.push('/set-password'), 2000);
-      } else if (err.response?.status === 401) {
+      } else if (status === 401) {
         setError('Имэйл эсвэл нууц үг буруу байна.');
       } else {
         setError('Алдаа гарлаа. Дахин оролдоно уу.');

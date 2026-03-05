@@ -8,6 +8,7 @@ import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, M
 import { useState, useRef, useEffect } from 'react';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { Role } from '@/lib/types';
+import { NotificationDropdown } from './notification-dropdown';
 
 export function Header() {
   const pathname = usePathname();
@@ -17,6 +18,7 @@ export function Header() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [displayDate, setDisplayDate] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Track scroll position
@@ -40,6 +42,17 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setDisplayDate(
+      new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    );
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -58,7 +71,6 @@ export function Header() {
     { label: 'Бидний тухай', href: '/about' },
     { label: 'Гишүүд', href: '/members' },
     { label: 'Нийтлэлүүд', href: '/' },
-    { label: 'Контент', href: '/search?category=content' },
   ];
 
   return (
@@ -68,11 +80,9 @@ export function Header() {
           ? 'bg-[#0a0a0a]/95 backdrop-blur-xl shadow-lg shadow-black/5' 
           : 'bg-[#0a0a0a]'
       }`}>
-        {/* Top Bar */}
         <div className="border-b border-white/10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-12 items-center justify-between">
-              {/* Live indicator */}
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e63946] opacity-75"></span>
@@ -81,17 +91,10 @@ export function Header() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-white/70">Эдийн засагчдын клуб</span>
               </div>
 
-              {/* Date */}
               <div className="hidden sm:block text-xs text-white/50">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+                <span suppressHydrationWarning>{displayDate || ' '}</span>
               </div>
 
-              {/* Subscribe CTA */}
               <Link 
                 href="/register" 
                 className="flex items-center gap-1.5 rounded-full bg-[#e63946] px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-[#c1121f]"
@@ -103,10 +106,8 @@ export function Header() {
           </div>
         </div>
 
-        {/* Main Header */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-8">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-lg transition-transform group-hover:scale-105">
                 E
@@ -117,7 +118,6 @@ export function Header() {
               </div>
             </Link>
 
-            {/* Navigation - Desktop */}
             <nav className="hidden lg:flex items-center gap-1">
               {navItems.map((item) => (
                 <Link
@@ -130,7 +130,6 @@ export function Header() {
               ))}
             </nav>
 
-            {/* Search Bar - Desktop */}
             <div className="hidden md:flex flex-1 max-w-md">
               <form onSubmit={handleSearch} className="w-full">
                 <div className="relative">
@@ -164,10 +163,7 @@ export function Header() {
               ) : (
                 <>
                   {/* Notifications */}
-                  <button className="relative p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#e63946]"></span>
-                  </button>
+                  <NotificationDropdown />
 
                   {/* Write Button */}
                   <Link href="/write" className="hidden sm:flex">
