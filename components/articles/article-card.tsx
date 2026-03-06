@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Post } from '@/lib/types';
-import { getImageUrl, getCoverImageUrl, getProfileImageUrl, formatDate, calculateReadTime, truncate } from '@/lib/helpers';
+import { getImageUrl, getCoverImageUrl, getProfileImageUrl, formatDate, calculateReadTime, truncate, getPostUrl } from '@/lib/helpers';
 import { Clock, Lock, MessageCircle, ArrowUpRight } from 'lucide-react';
 
 interface ArticleCardProps {
@@ -14,12 +14,13 @@ interface ArticleCardProps {
 export function ArticleCard({ post, variant = 'default', number }: ArticleCardProps) {
   const readTime = post.contentHtml ? calculateReadTime(post.contentHtml) : 5;
   const isPrivate = post.visibility === 'PRIVATE';
+  const postUrl = getPostUrl(post);
 
   // Numbered variant (like "Top Stories" list)
   if (variant === 'numbered' && number) {
     return (
       <article className="group">
-        <Link href={`/article/${post.slug}`} className="block">
+        <Link href={postUrl} className="block">
           <div className="flex gap-4 py-4 border-b border-gray-100 hover:bg-gray-50/50 transition-colors -mx-4 px-4">
             <div className="number-badge flex-shrink-0">
               {number}
@@ -54,7 +55,7 @@ export function ArticleCard({ post, variant = 'default', number }: ArticleCardPr
   if (variant === 'compact') {
     return (
       <article className="group">
-        <Link href={`/article/${post.slug}`} className="block">
+        <Link href={postUrl} className="block">
           <div className="flex gap-4 py-3">
             {(post.coverImagePath || post.coverFile) && (
               <div className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100">
@@ -83,7 +84,7 @@ export function ArticleCard({ post, variant = 'default', number }: ArticleCardPr
   if (variant === 'featured') {
     return (
       <article className="group relative h-full">
-        <Link href={`/article/${post.slug}`} className="block h-full">
+        <Link href={postUrl} className="block h-full">
           <div className="relative h-full min-h-[400px] rounded-2xl overflow-hidden bg-gray-900">
             {(post.coverImagePath || post.coverFile) && (
               <img
@@ -138,7 +139,7 @@ export function ArticleCard({ post, variant = 'default', number }: ArticleCardPr
   // Default variant (stream item)
   return (
     <article className="group fade-up">
-      <Link href={`/article/${post.slug}`} className="block">
+      <Link href={postUrl} className="block">
         <div className="stream-item flex flex-col gap-4 md:flex-row md:items-start">
           {/* Content */}
           <div className="flex-1 order-2 md:order-1">

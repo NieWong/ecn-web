@@ -1,15 +1,17 @@
-import { File } from './types';
+import { File, Post } from './types';
 
 /**
  * Generate URL-friendly slug from title
  */
 export function generateSlug(title: string): string {
-  return title
+  const slug = title
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+
+  return slug || `post-${Date.now()}`;
 }
 
 /**
@@ -79,6 +81,15 @@ export function getCoverImageUrl(
   if (file) return getImageUrl(file);
   // Return placeholder
   return '/placeholder-image.jpg';
+}
+
+/**
+ * Get canonical article URL with fallback for legacy posts that may have empty slug
+ */
+export function getPostUrl(post: Pick<Post, 'id' | 'slug'>): string {
+  const slug = post.slug?.trim();
+  const identifier = slug || post.id;
+  return `/article/${identifier}`;
 }
 
 /**

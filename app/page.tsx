@@ -11,7 +11,7 @@ import { postsAPI, categoriesAPI } from '@/lib/api';
 import { Post, Category, PostStatus, Visibility } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, TrendingUp, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
-import { calculateReadTime, formatDate, getImageUrl, getCoverImageUrl, getProfileImageUrl } from '@/lib/helpers';
+import { calculateReadTime, formatDate, getImageUrl, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -78,7 +78,7 @@ export default function Home() {
             <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
               {featuredPost && (
                 <div className="lg:col-span-2 lg:row-span-2">
-                  <Link href={`/article/${featuredPost.slug}`} className="group block h-full">
+                  <Link href={getPostUrl(featuredPost)} className="group block h-full">
                     <article className="relative h-full min-h-[300px] lg:min-h-[500px] rounded-2xl overflow-hidden bg-gray-900">
                       {(featuredPost.coverImagePath || featuredPost.coverFile) && (
                         <img
@@ -139,7 +139,7 @@ export default function Home() {
               
               {secondaryFeatured.map((post) => (
                 <div key={post.id} className="lg:col-span-1">
-                  <Link href={`/article/${post.slug}`} className="group block h-full">
+                  <Link href={getPostUrl(post)} className="group block h-full">
                     <article className="relative h-full min-h-[200px] lg:min-h-0 rounded-2xl overflow-hidden bg-gray-900">
                       {(post.coverImagePath || post.coverFile) && (
                         <img

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { postsAPI, usersAPI, categoriesAPI } from '@/lib/api';
 import { Post, PostStatus, Role, User, Visibility, MembershipLevel, MembershipLevelLabels, Category } from '@/lib/types';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { formatDate, formatNumber } from '@/lib/helpers';
+import { formatDate, formatNumber, getPostUrl } from '@/lib/helpers';
 import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, EyeOff, XCircle, Edit, Award, FolderOpen, Trash2, Plus } from 'lucide-react';
 
 const MAX_MODERATION_LIST = 50;
@@ -518,7 +518,7 @@ export default function AdminDashboardPage() {
                     className="grid grid-cols-5 items-center gap-4 border-b border-gray-100 px-6 py-4 text-sm"
                   >
                     <div>
-                      <Link href={`/article/${post.slug}`} className="font-medium text-gray-900 hover:text-blue-600">
+                      <Link href={getPostUrl(post)} className="font-medium text-gray-900 hover:text-blue-600">
                         {post.title}
                       </Link>
                       {post.adminComment && (
@@ -805,7 +805,7 @@ export default function AdminDashboardPage() {
                       <tr key={post.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <div>
-                            <Link href={`/article/${post.slug}`} className="font-medium text-gray-900 hover:text-blue-600">
+                            <Link href={getPostUrl(post)} className="font-medium text-gray-900 hover:text-blue-600">
                               {post.title}
                             </Link>
                             <p className="text-xs text-gray-500">ID: {post.id.slice(0, 8)}</p>
