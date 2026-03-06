@@ -1,15 +1,13 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { categoriesAPI, postsAPI, usersAPI } from '@/lib/api';
+import { PostStatus, PublicProfile, Visibility } from '@/lib/types';
+import { getProfileImageUrl } from '@/lib/helpers';
 import { Users, Target, BookOpen, Mic, Calendar, GraduationCap, Sparkles, Award, Building2 } from 'lucide-react';
-
-const stats = [
-  { value: '185', label: 'Нийтлэлүүд сошиал орчинд' },
-  { value: '8', label: 'Төрлийн контент, бүтээлүүд' },
-  { value: '9', label: 'Удаагийн арга хэмжээ' },
-  { value: '49', label: 'Нийт гишүүд' },
-];
 
 const activities = [
   {
@@ -58,6 +56,87 @@ const alumni = [
 ];
 
 export default function AboutPage() {
+  const [articleCount, setArticleCount] = useState(0);
+  const [contentTypeCount, setContentTypeCount] = useState(0);
+  const [eventCount, setEventCount] = useState(0);
+  const [memberCount, setMemberCount] = useState(0);
+  const [previewMembers, setPreviewMembers] = useState<PublicProfile[]>([]);
+
+  useEffect(() => {
+    loadSystemStats();
+  }, []);
+
+  const loadAllPublishedPosts = async () => {
+    const allPosts: Awaited<ReturnType<typeof postsAPI.list>> = [];
+    let skip = 0;
+    const take = 100;
+
+    while (true) {
+      const batch = await postsAPI.list({
+        status: PostStatus.PUBLISHED,
+        visibility: Visibility.PUBLIC,
+        sort: 'PUBLISHED_AT_DESC',
+        take,
+        skip,
+      });
+
+      allPosts.push(...batch);
+
+      if (batch.length < take) break;
+      skip += take;
+      if (skip >= 2000) break;
+    }
+
+    return allPosts;
+  };
+
+  const loadSystemStats = async () => {
+    try {
+      const [categories, members, posts] = await Promise.all([
+        categoriesAPI.list(),
+        usersAPI.listPublicProfiles(),
+        loadAllPublishedPosts(),
+      ]);
+
+      const filteredMembers = members.filter((member) => {
+        if (!member.name) return true;
+        return member.name.trim().toLowerCase() !== 'admin';
+      });
+
+      const events = posts.filter((post) =>
+        post.categories?.some((category) => {
+          const text = `${category.slug} ${category.name}`.toLowerCase();
+          return (
+            text.includes('event') ||
+            text.includes('events') ||
+            text.includes('arga') ||
+            text.includes('hemjee') ||
+            text.includes('арга') ||
+            text.includes('хэмж')
+          );
+        })
+      ).length;
+
+      setArticleCount(posts.length);
+      setContentTypeCount(categories.length);
+      setEventCount(events);
+      setMemberCount(filteredMembers.length);
+      setPreviewMembers(filteredMembers.slice(0, 8));
+    } catch (error) {
+      console.error('Failed to load about stats:', error);
+    }
+  };
+
+  const stats = useMemo(
+    () => [
+      { value: String(articleCount), label: 'Нийтлэлүүд сошиал орчинд' },
+      { value: String(contentTypeCount), label: 'Төрлийн контент, бүтээлүүд' },
+      { value: String(eventCount), label: 'Удаагийн арга хэмжээ' },
+      { value: String(memberCount), label: 'Нийт гишүүд' },
+    ],
+    [articleCount, contentTypeCount, eventCount, memberCount]
+  );
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <Header />
@@ -195,6 +274,64 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Members Preview */}
+        <section className="py-20 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#e63946] mb-2">Гишүүдийн тойм</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Манай гишүүд</h2>
+              <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+                Эдийн засагчдын клубийн гишүүдээс онцолж танилцуулж байна
+              </p>
+            </div>
+
+            {previewMembers.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {previewMembers.map((member) => (
+                    <Link key={member.id} href={`/profile/${member.id}`} className="group">
+                      <div className="premium-card p-6 card-hover h-full text-center">
+                        <div className="relative mx-auto w-20 h-20 mb-4">
+                          {(member.profilePicturePath || member.profilePicture) ? (
+                            <img
+                              src={getProfileImageUrl(member.profilePicturePath, member.profilePicture)}
+                              alt={member.name || 'Member'}
+                              className="w-full h-full rounded-full object-cover ring-4 ring-gray-100 group-hover:ring-[#e63946]/20 transition-all"
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-[#e63946] to-[#ff6b6b] flex items-center justify-center text-white text-xl font-bold ring-4 ring-gray-100 group-hover:ring-[#e63946]/20 transition-all">
+                              {member.name?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                          )}
+                        </div>
+
+                        <h3 className="text-base font-bold text-gray-900 group-hover:text-[#e63946] transition-colors line-clamp-1">
+                          {member.name || 'Нэргүй гишүүн'}
+                        </h3>
+
+                        {member.aboutMe && (
+                          <p className="mt-2 text-sm text-gray-600 line-clamp-2">{member.aboutMe}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="mt-10 text-center">
+                  <Link
+                    href="/members"
+                    className="inline-flex items-center rounded-xl bg-[#e63946] px-6 py-3 text-sm font-semibold text-white hover:bg-[#d62f3d] transition-colors"
+                  >
+                    Бүх гишүүдийг харах
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="premium-card p-8 text-center text-gray-600">Гишүүдийн мэдээлэл ачаалж байна...</div>
+            )}
           </div>
         </section>
       </main>

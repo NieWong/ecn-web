@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { usersAPI } from '@/lib/api';
-import { PublicProfile } from '@/lib/types';
+import { MembershipLevel, MembershipLevelLabels, PublicProfile, Role } from '@/lib/types';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { Loader2, Users, Globe, Twitter, Linkedin, ArrowUpRight } from 'lucide-react';
 
@@ -34,6 +34,13 @@ export default function MembersPage() {
       setIsLoading(false);
     }
   };
+
+  const honoraryMembers = members.filter(
+    (member) => member.membershipLevel === MembershipLevel.HONORARY_MEMBER
+  );
+  const regularMembers = members.filter(
+    (member) => member.membershipLevel !== MembershipLevel.HONORARY_MEMBER
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -91,11 +98,27 @@ export default function MembersPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {members.map((member) => (
-                    <MemberCard key={member.id} member={member} />
-                  ))}
-                </div>
+                {regularMembers.length > 0 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Гишүүд</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {regularMembers.map((member) => (
+                        <MemberCard key={member.id} member={member} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {honoraryMembers.length > 0 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Хүндэт гишүүд</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {honoraryMembers.map((member) => (
+                        <MemberCard key={member.id} member={member} />
+                      ))}
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -108,6 +131,11 @@ export default function MembersPage() {
 }
 
 function MemberCard({ member }: { member: PublicProfile }) {
+  const membershipLabel = member.membershipLevel
+    ? MembershipLevelLabels[member.membershipLevel]
+    : 'Гишүүн';
+  const roleLabel = member.role === Role.ADMIN ? 'Админ' : 'Хэрэглэгч';
+
   return (
     <Link href={`/profile/${member.id}`} className="group">
       <div className="premium-card p-6 card-hover h-full">
@@ -133,6 +161,10 @@ function MemberCard({ member }: { member: PublicProfile }) {
         <h3 className="text-center text-lg font-bold text-gray-900 group-hover:text-[#e63946] transition-colors">
           {member.name || 'Нэргүй гишүүн'}
         </h3>
+
+        <p className="mt-1 text-center text-sm font-medium text-gray-700">
+          {membershipLabel} · {roleLabel}
+        </p>
 
         {/* About */}
         {member.aboutMe && (

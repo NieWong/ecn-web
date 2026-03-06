@@ -166,6 +166,8 @@ export interface AuthResponse {
 export interface PublicProfile {
   id: string;
   name: string | null;
+  role?: Role;
+  membershipLevel?: MembershipLevel;
   aboutMe: string | null;
   facebook: string | null;
   twitter: string | null;
