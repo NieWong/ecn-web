@@ -66,7 +66,8 @@ export default function Home() {
   const featuredPost = posts[0];
   const secondaryFeatured = posts.slice(1, 3);
   const topStories = posts.slice(0, 5);
-  const streamPosts = posts.slice(3);
+  const streamPosts = posts.length > 3 ? posts.slice(3) : posts;
+  const sidebarLatestPosts = posts.length > 5 ? posts.slice(5, 9) : posts.slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -260,7 +261,7 @@ export default function Home() {
               <div className="lg:col-span-1">
                 <div className="sticky top-[180px] space-y-6">
                   <TopStories posts={topStories} />
-                  <TrendingSidebar posts={posts.slice(5, 9)} categories={categories} />
+                  <TrendingSidebar posts={sidebarLatestPosts} categories={categories} />
                 </div>
               </div>
             </div>

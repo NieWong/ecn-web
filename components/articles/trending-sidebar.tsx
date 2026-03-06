@@ -53,7 +53,7 @@ export function TrendingSidebar({ posts = [], categories = [] }: TrendingSidebar
       )}
 
       {/* Club CTA */}
-      <div className="premium-card p-6 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white">
+      <div className="rounded-2xl border border-white/10 p-6 bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a] text-white shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <Award className="h-5 w-5 text-[#e63946]" />
           <h3 className="text-sm font-bold uppercase tracking-wide">
