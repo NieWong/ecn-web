@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Header } from '@/components/layout/header';
@@ -11,7 +11,7 @@ import { Post, PostStatus, Visibility } from '@/lib/types';
 import { Loader2, Search, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function SearchPage() {
+function SearchContent() {
   const params = useSearchParams();
   const query = params.get('q') || '';
   const [posts, setPosts] = useState<Post[]>([]);
@@ -103,5 +103,30 @@ export default function SearchPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-[#fafafa]">
+          <Header />
+          <main className="flex-1">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-[#e63946] mx-auto" />
+                  <p className="mt-4 text-sm text-gray-500">Хайж байна...</p>
+                </div>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <SearchContent />
+    </Suspense>
   );
 }

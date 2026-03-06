@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -24,7 +24,7 @@ const RichEditor = dynamic(() => import('@/components/ui/rich-editor').then(mod 
   ),
 });
 
-export default function WritePage() {
+function WriteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
@@ -436,5 +436,26 @@ export default function WritePage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function WritePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-[#fafafa]">
+          <Header />
+          <main className="flex-1 flex items-center justify-center px-4 py-16">
+            <div className="text-center">
+              <Loader2 className="h-10 w-10 animate-spin text-[#e63946] mx-auto" />
+              <p className="mt-4 text-sm text-gray-500">Уншиж байна...</p>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <WriteContent />
+    </Suspense>
   );
 }
