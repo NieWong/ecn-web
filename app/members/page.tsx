@@ -22,7 +22,11 @@ export default function MembersPage() {
     try {
       setIsLoading(true);
       const data = await usersAPI.listPublicProfiles();
-      setMembers(data);
+      const filteredMembers = data.filter((member) => {
+        if (!member.name) return true;
+        return member.name.trim().toLowerCase() !== 'admin';
+      });
+      setMembers(filteredMembers);
     } catch (err) {
       console.error('Failed to load members:', err);
       setError('Гишүүдийн мэдээллийг ачаалж чадсангүй.');

@@ -1,7 +1,10 @@
 /**
  * Local file upload utilities
- * Handles uploading files to the Next.js public folder
+ * Uses backend file upload API and returns public file URLs
  */
+
+import { filesAPI } from './files';
+import { Visibility } from '@/lib/types';
 
 export type UploadCategory = 'profile' | 'article' | 'cv' | 'general';
 
@@ -13,6 +16,7 @@ export interface UploadResult {
   mimeType: string;
   size: number;
   category: UploadCategory;
+  fileId: string;
 }
 
 export interface UploadError {
@@ -20,41 +24,35 @@ export interface UploadError {
 }
 
 /**
- * Upload a file locally to the Next.js public folder
+ * Upload a file using backend file service
  */
 export async function uploadLocal(
   file: File,
   category: UploadCategory = 'general'
 ): Promise<UploadResult> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('category', category);
-
-  const response = await fetch('/api/upload', {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const error: UploadError = await response.json();
-    throw new Error(error.error || 'Upload failed');
+  try {
+    const uploadedFile = await filesAPI.upload(file, Visibility.PUBLIC);
+    return {
+      success: true,
+      path: filesAPI.getUrl(uploadedFile.storageKey),
+      filename: uploadedFile.storageKey,
+      originalName: uploadedFile.originalName,
+      mimeType: uploadedFile.mimeType,
+      size: uploadedFile.size,
+      category,
+      fileId: uploadedFile.id,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Upload failed';
+    throw new Error(message);
   }
-
-  return response.json();
 }
 
 /**
  * Delete a locally uploaded file
  */
 export async function deleteLocal(filePath: string): Promise<void> {
-  const response = await fetch(`/api/upload/delete?path=${encodeURIComponent(filePath)}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    const error: UploadError = await response.json();
-    throw new Error(error.error || 'Delete failed');
-  }
+  throw new Error(`Delete by path is not supported in production: ${filePath}`);
 }
 
 /**
