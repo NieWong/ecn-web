@@ -44,6 +44,10 @@ export const usersAPI = {
     return response.data;
   },
 
+  deleteUser: async (id: string) => {
+    await apiClient.delete(`/users/${id}`);
+  },
+
   // Admin: Update user's membership level
   updateMembershipLevel: async (id: string, membershipLevel: MembershipLevel) => {
     const response = await apiClient.patch<User>(`/users/${id}/membership-level`, { membershipLevel });

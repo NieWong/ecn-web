@@ -251,6 +251,21 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Та энэ хэрэглэгчийг бүр мөсөн устгахдаа итгэлтэй байна уу?')) return;
+    try {
+      setActionLoading(userId, true);
+      await usersAPI.deleteUser(userId);
+      await loadDashboard();
+    } catch (err: any) {
+      console.error('Delete user failed:', err);
+      const message = err?.response?.data?.message || 'Хэрэглэгч устгахад алдаа гарлаа';
+      alert(message);
+    } finally {
+      setActionLoading(userId, false);
+    }
+  };
+
   // Delete post
   const handleDeletePost = async (id: string) => {
     if (!confirm('Та энэ нийтлэлийг устгахдаа итгэлтэй байна уу?')) return;
@@ -758,6 +773,14 @@ export default function AdminDashboardPage() {
                                       Идэвхжүүлэх
                                     </Button>
                                   )}
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    disabled={actionStates[u.id] || u.id === user?.id}
+                                  >
+                                    Устгах
+                                  </Button>
                                 </>
                               )}
                             </div>
