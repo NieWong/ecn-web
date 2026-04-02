@@ -9,6 +9,22 @@ import { MembershipLevel, MembershipLevelLabels, PublicProfile, Role } from '@/l
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { Loader2, Users, Globe, Twitter, Linkedin, ArrowUpRight } from 'lucide-react';
 
+const membershipPriority: MembershipLevel[] = [
+  MembershipLevel.HONORARY_MEMBER,
+  MembershipLevel.BOARD_MEMBER,
+  MembershipLevel.ADMIN_MEMBER,
+  MembershipLevel.MEMBER,
+  MembershipLevel.REGULAR_USER,
+];
+
+const sectionTitles: Record<MembershipLevel, string> = {
+  [MembershipLevel.HONORARY_MEMBER]: 'Хүндэт гишүүд',
+  [MembershipLevel.BOARD_MEMBER]: 'Удирдах зөвлөл',
+  [MembershipLevel.ADMIN_MEMBER]: 'Админ гишүүд',
+  [MembershipLevel.MEMBER]: 'Гишүүд',
+  [MembershipLevel.REGULAR_USER]: 'Энгийн хэрэглэгчид',
+};
+
 export default function MembersPage() {
   const [members, setMembers] = useState<PublicProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,17 +51,19 @@ export default function MembersPage() {
     }
   };
 
-  const honoraryMembers = members.filter(
-    (member) => member.membershipLevel === MembershipLevel.HONORARY_MEMBER
-  );
-  const boardMembers = members.filter(
-    (member) => member.membershipLevel === MembershipLevel.BOARD_MEMBER
-  );
-  const regularMembers = members.filter(
-    (member) =>
-      member.membershipLevel !== MembershipLevel.HONORARY_MEMBER &&
-      member.membershipLevel !== MembershipLevel.BOARD_MEMBER
-  );
+  const groupedMembers = membershipPriority
+    .map((level) => {
+      const items = members
+        .filter((member) => member.membershipLevel === level)
+        .sort((left, right) => (left.name || left.id).localeCompare(right.name || right.id));
+
+      return {
+        level,
+        title: sectionTitles[level],
+        items,
+      };
+    })
+    .filter((group) => group.items.length > 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -103,38 +121,18 @@ export default function MembersPage() {
                   </p>
                 </div>
 
-                {boardMembers.length > 0 && (
-                  <>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Удирдах зөвлөл</h2>
+                {groupedMembers.map((group, index) => (
+                  <section key={group.level}>
+                    <h2 className={`text-2xl font-bold text-gray-900 mb-6 ${index > 0 ? 'mt-12' : ''}`}>
+                      {group.title}
+                    </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {boardMembers.map((member) => (
+                      {group.items.map((member) => (
                         <MemberCard key={member.id} member={member} />
                       ))}
                     </div>
-                  </>
-                )}
-
-                {regularMembers.length > 0 && (
-                  <>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Гишүүд</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {regularMembers.map((member) => (
-                        <MemberCard key={member.id} member={member} />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {honoraryMembers.length > 0 && (
-                  <>
-                    <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Хүндэт гишүүд</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {honoraryMembers.map((member) => (
-                        <MemberCard key={member.id} member={member} />
-                      ))}
-                    </div>
-                  </>
-                )}
+                  </section>
+                ))}
               </>
             )}
           </div>
