@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Loader2, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function SetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const setPasswordAction = useAuthStore((state) => state.setPassword);
 
   const [email, setEmail] = useState('');
@@ -21,14 +20,14 @@ export default function SetPasswordPage() {
   const [isPrefilledEmail, setIsPrefilledEmail] = useState(false);
 
   useEffect(() => {
-    const queryEmail = searchParams.get('email');
+    const queryEmail = new URLSearchParams(window.location.search).get('email');
     if (queryEmail) {
       setEmail(queryEmail);
       setIsPrefilledEmail(true);
       return;
     }
     setIsPrefilledEmail(false);
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
