@@ -38,8 +38,13 @@ export default function MembersPage() {
   const honoraryMembers = members.filter(
     (member) => member.membershipLevel === MembershipLevel.HONORARY_MEMBER
   );
+  const boardMembers = members.filter(
+    (member) => member.membershipLevel === MembershipLevel.BOARD_MEMBER
+  );
   const regularMembers = members.filter(
-    (member) => member.membershipLevel !== MembershipLevel.HONORARY_MEMBER
+    (member) =>
+      member.membershipLevel !== MembershipLevel.HONORARY_MEMBER &&
+      member.membershipLevel !== MembershipLevel.BOARD_MEMBER
   );
 
   return (
@@ -98,9 +103,20 @@ export default function MembersPage() {
                   </p>
                 </div>
 
+                {boardMembers.length > 0 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Удирдах зөвлөл</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {boardMembers.map((member) => (
+                        <MemberCard key={member.id} member={member} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
                 {regularMembers.length > 0 && (
                   <>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Гишүүд</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Гишүүд</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {regularMembers.map((member) => (
                         <MemberCard key={member.id} member={member} />
@@ -140,7 +156,7 @@ function MemberCard({ member }: { member: PublicProfile }) {
     <Link href={`/profile/${member.id}`} className="group">
       <div className="premium-card p-6 card-hover h-full">
         {/* Profile Picture */}
-        <div className="relative mx-auto w-24 h-24 mb-4">
+        <div className="relative mx-auto w-36 h-36 mb-5">
           {(member.profilePicturePath || member.profilePicture) ? (
             <img
               src={getProfileImageUrl(member.profilePicturePath, member.profilePicture)}

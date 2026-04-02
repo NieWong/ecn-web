@@ -17,6 +17,11 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   title: "ECN News - Share Your Stories",
   description: "A platform for sharing stories, ideas, and insights. Join our community of writers and readers.",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

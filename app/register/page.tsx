@@ -85,8 +85,8 @@ export default function RegisterPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl transition-transform group-hover:scale-105">
-              E
+            <div className="flex h-12 w-16 items-center justify-center rounded-2xl bg-brand p-1 transition-transform group-hover:scale-105 overflow-hidden">
+              <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-xl object-cover" />
             </div>
             <div>
               <span className="text-2xl font-bold tracking-tight text-white">ECN</span>
@@ -138,8 +138,8 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl">
-                E
+              <div className="flex h-10 w-13 items-center justify-center rounded-xl bg-brand p-1 overflow-hidden">
+                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
               </div>
             </Link>
           </div>

@@ -4,22 +4,28 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap } from 'lucide-react';
+import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
-import { Role } from '@/lib/types';
+import { MembershipLevel, Role } from '@/lib/types';
 import { NotificationDropdown } from './notification-dropdown';
+import { MemberInfoModal } from '@/components/common/member-info-modal';
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const isAdmin = user?.role === Role.ADMIN;
+  const canAccessOnlyMembers = !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showContentMenu, setShowContentMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [displayDate, setDisplayDate] = useState('');
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [showMemberInfoModal, setShowMemberInfoModal] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const contentMenuRef = useRef<HTMLDivElement>(null);
 
   // Track scroll position
   useEffect(() => {
@@ -33,8 +39,12 @@ export function Header() {
   // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setShowUserMenu(false);
+      }
+      if (contentMenuRef.current && !contentMenuRef.current.contains(target)) {
+        setShowContentMenu(false);
       }
     }
 
@@ -64,14 +74,24 @@ export function Header() {
   const handleLogout = () => {
     logout();
     setShowUserMenu(false);
+    setShowContentMenu(false);
     router.push('/');
   };
 
   const navItems = [
     { label: 'Бидний тухай', href: '/about' },
     { label: 'Гишүүд', href: '/members' },
-    { label: 'Нийтлэлүүд', href: '/' },
   ];
+
+  const contentLinks = [
+    { label: 'Нийтлэлүүд', href: '/' },
+    { label: 'Мэдээ, мэдээлэл', href: '/news' },
+    { label: 'Нийтлэл бичих', href: '/write' },
+  ];
+
+  if (canAccessOnlyMembers) {
+    contentLinks.push({ label: 'Only Members', href: '/only-members' });
+  }
 
   return (
     <>
@@ -88,20 +108,20 @@ export function Header() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e63946] opacity-75"></span>
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[#e63946]"></span>
                 </span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-white/70">Эдийн засагчдын клуб</span>
+                <img src="/club_logo.png" alt="ECN Club" className="h-5 w-auto object-contain" />
               </div>
 
               <div className="hidden sm:block text-xs text-white/50">
                 <span suppressHydrationWarning>{displayDate || ' '}</span>
               </div>
 
-              <Link 
-                href="/register" 
+              <button
+                onClick={() => setShowMemberInfoModal(true)}
                 className="flex items-center gap-1.5 rounded-full bg-[#e63946] px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-[#c1121f]"
               >
                 <Zap className="h-3 w-3" />
                 <span>Гишүүн болох</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -109,8 +129,8 @@ export function Header() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-lg transition-transform group-hover:scale-105">
-                E
+              <div className="flex h-8 w-11 items-center justify-center rounded-2xl bg-[#e63946] p-1 transition-transform group-hover:scale-105 overflow-hidden">
+                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
               </div>
               <div className="hidden sm:block">
                 <span className="text-xl font-bold tracking-tight text-white">ECN</span>
@@ -128,6 +148,38 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+
+              <div className="relative" ref={contentMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowContentMenu((value) => !value)}
+                  className={`flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                    pathname === '/' || pathname === '/news' || pathname.startsWith('/write')
+                      ? 'bg-white/10 text-white'
+                      : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <span>Контент / Нийтлэл</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showContentMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showContentMenu && (
+                  <div className="absolute left-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#1a1a1a] shadow-2xl shadow-black/50">
+                    <div className="p-2">
+                      {contentLinks.map((item) => (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          onClick={() => setShowContentMenu(false)}
+                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                          <span>{item.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </nav>
 
             <div className="hidden md:flex flex-1 max-w-md">
@@ -177,7 +229,7 @@ export function Header() {
                   </Link>
 
                   {/* User Menu */}
-                  <div className="relative" ref={menuRef}>
+                  <div className="relative" ref={userMenuRef}>
                     <button
                       onClick={() => setShowUserMenu(!showUserMenu)}
                       className="flex items-center gap-2 rounded-full p-1 pr-3 bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
@@ -320,6 +372,24 @@ export function Header() {
                     {item.label}
                   </Link>
                 ))}
+
+                <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                  <div className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-white/40">
+                    Контент / Нийтлэл
+                  </div>
+                  <div className="mt-1 flex flex-col gap-1">
+                    {contentLinks.map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setShowMobileMenu(false)}
+                        className="rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </nav>
 
               {/* Mobile Auth */}
@@ -341,6 +411,8 @@ export function Header() {
           </div>
         )}
       </header>
+
+      <MemberInfoModal open={showMemberInfoModal} onClose={() => setShowMemberInfoModal(false)} />
     </>
   );
 }

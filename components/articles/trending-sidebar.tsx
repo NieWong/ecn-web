@@ -4,6 +4,8 @@ import { Post, Category } from '@/lib/types';
 import { ArticleCard } from './article-card';
 import { TrendingUp, Hash, Users, Award } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { MemberInfoModal } from '@/components/common/member-info-modal';
 
 interface TrendingSidebarProps {
   posts?: Post[];
@@ -11,6 +13,8 @@ interface TrendingSidebarProps {
 }
 
 export function TrendingSidebar({ posts = [], categories = [] }: TrendingSidebarProps) {
+  const [showMemberInfoModal, setShowMemberInfoModal] = useState(false);
+
   return (
     <aside className="space-y-6">
       {categories.length > 0 && (
@@ -63,12 +67,12 @@ export function TrendingSidebar({ posts = [], categories = [] }: TrendingSidebar
         <p className="text-sm text-white/70 mb-4">
           Эдийн засагчдын клубт нэгдэж, мэдлэгээ хуваалцаарай.
         </p>
-        <Link
-          href="/register"
+        <button
+          onClick={() => setShowMemberInfoModal(true)}
           className="btn-accent w-full text-center block"
         >
           Бүртгүүлэх
-        </Link>
+        </button>
         <Link
           href="/about"
           className="block mt-3 text-center text-sm text-white/60 hover:text-white transition-colors"
@@ -76,6 +80,8 @@ export function TrendingSidebar({ posts = [], categories = [] }: TrendingSidebar
           Дэлгэрэнгүй →
         </Link>
       </div>
+
+      <MemberInfoModal open={showMemberInfoModal} onClose={() => setShowMemberInfoModal(false)} />
     </aside>
   );
 }

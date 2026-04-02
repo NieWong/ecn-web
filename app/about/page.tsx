@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { categoriesAPI, postsAPI, usersAPI } from '@/lib/api';
-import { PostStatus, PublicProfile, Visibility } from '@/lib/types';
+import { MembershipLevel, PostStatus, PublicProfile, Visibility } from '@/lib/types';
 import { getProfileImageUrl } from '@/lib/helpers';
 import { Users, Target, BookOpen, Mic, Calendar, GraduationCap, Sparkles, Award, Building2 } from 'lucide-react';
 
@@ -44,15 +44,17 @@ const activities = [
 
 const alumni = [
   'Монголбанк',
-  'Хөгжлийн банк',
   'Голомт банк',
   'Худалдаа Хөгжлийн банк',
-  'Хаан банк',
-  'KPMG',
-  'Deloitte',
-  'EY',
-  'PwC',
-  'Дэлхийн банк',
+  'Хөгжлийн банк',
+  'VMC Holding',
+  'Total Distribution LLC',
+  'ХасБанк',
+  'Premium Nexus ХК',
+  'Санхүү эдийн засгийн их сургууль',
+  'Юнител Групп',
+  'Ард Секьюритиз',
+  'Инвескор ББСБ ХК',
 ];
 
 export default function AboutPage() {
@@ -61,6 +63,7 @@ export default function AboutPage() {
   const [eventCount, setEventCount] = useState(0);
   const [memberCount, setMemberCount] = useState(0);
   const [previewMembers, setPreviewMembers] = useState<PublicProfile[]>([]);
+  const [activeMemberLevel, setActiveMemberLevel] = useState<'BOARD' | 'CORE' | 'HONORARY'>('BOARD');
 
   useEffect(() => {
     loadSystemStats();
@@ -136,6 +139,21 @@ export default function AboutPage() {
     ],
     [articleCount, contentTypeCount, eventCount, memberCount]
   );
+
+  const previewByLevel = useMemo(() => {
+    if (activeMemberLevel === 'BOARD') {
+      return previewMembers.filter((member) => member.membershipLevel === MembershipLevel.BOARD_MEMBER);
+    }
+    if (activeMemberLevel === 'HONORARY') {
+      return previewMembers.filter((member) => member.membershipLevel === MembershipLevel.HONORARY_MEMBER);
+    }
+    return previewMembers.filter(
+      (member) =>
+        member.membershipLevel === MembershipLevel.MEMBER ||
+        member.membershipLevel === MembershipLevel.REGULAR_USER ||
+        !member.membershipLevel
+    );
+  }, [activeMemberLevel, previewMembers]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -288,10 +306,43 @@ export default function AboutPage() {
               </p>
             </div>
 
-            {previewMembers.length > 0 ? (
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => setActiveMemberLevel('BOARD')}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeMemberLevel === 'BOARD'
+                    ? 'bg-[#e63946] text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e63946]'
+                }`}
+              >
+                Удирдах зөвлөл
+              </button>
+              <button
+                onClick={() => setActiveMemberLevel('CORE')}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeMemberLevel === 'CORE'
+                    ? 'bg-[#e63946] text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e63946]'
+                }`}
+              >
+                Үндсэн гишүүд
+              </button>
+              <button
+                onClick={() => setActiveMemberLevel('HONORARY')}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeMemberLevel === 'HONORARY'
+                    ? 'bg-[#e63946] text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e63946]'
+                }`}
+              >
+                Хүндэт гишүүд
+              </button>
+            </div>
+
+            {previewByLevel.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {previewMembers.map((member) => (
+                  {previewByLevel.map((member) => (
                     <Link key={member.id} href={`/profile/${member.id}`} className="group">
                       <div className="premium-card p-6 card-hover h-full text-center">
                         <div className="relative mx-auto w-20 h-20 mb-4">

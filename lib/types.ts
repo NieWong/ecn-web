@@ -55,6 +55,19 @@ export enum FileKind {
   OTHER = "OTHER"
 }
 
+export enum FinanceEntryType {
+  BUDGET = "BUDGET",
+  INCOME = "INCOME",
+  EXPENSE = "EXPENSE"
+}
+
+export enum FinanceStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  PAID = "PAID",
+  CANCELLED = "CANCELLED"
+}
+
 // File Interface
 export interface File {
   id: string;
@@ -78,6 +91,7 @@ export interface User {
   role: Role;
   isActive: boolean;
   membershipLevel: MembershipLevel;
+  isAccountant: boolean;
   profilePictureId: string | null;
   profilePicture: File | null;
   profilePicturePath: string | null;
@@ -217,6 +231,7 @@ export interface CreatePostRequest {
   contentHtml?: string;
   status: PostStatus;
   visibility: Visibility;
+  contentType?: 'CONTENT' | 'NEWS';
   coverFileId?: string;
   coverImagePath?: string | null;
   categoryIds?: string[];
@@ -230,6 +245,7 @@ export interface UpdatePostRequest {
   contentHtml?: string;
   status?: PostStatus;
   visibility?: Visibility;
+  contentType?: 'CONTENT' | 'NEWS';
   coverFileId?: string;
   coverImagePath?: string | null;
   categoryIds?: string[];
@@ -244,4 +260,74 @@ export interface PostFilters {
   sort?: 'CREATED_AT_DESC' | 'CREATED_AT_ASC' | 'PUBLISHED_AT_DESC' | 'PUBLISHED_AT_ASC';
   skip?: number;
   take?: number;
+}
+
+export interface FinanceEntry {
+  id: string;
+  title: string;
+  type: FinanceEntryType;
+  amount: number;
+  source: string | null;
+  purpose: string | null;
+  usedBy: string | null;
+  status: FinanceStatus;
+  transactionDate: string;
+  notes: string | null;
+  createdById: string;
+  managerId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  manager?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+}
+
+export interface FinanceSummary {
+  totalIncome: number;
+  totalExpense: number;
+  totalBudget: number;
+  balance: number;
+}
+
+export interface FinanceFilters {
+  type?: FinanceEntryType;
+  status?: FinanceStatus;
+  managerId?: string;
+  from?: string;
+  to?: string;
+  skip?: number;
+  take?: number;
+}
+
+export interface CreateFinanceEntryRequest {
+  title: string;
+  type: FinanceEntryType;
+  amount: number;
+  source?: string | null;
+  purpose?: string | null;
+  usedBy?: string | null;
+  status?: FinanceStatus;
+  transactionDate: string;
+  notes?: string | null;
+  managerId?: string | null;
+}
+
+export interface UpdateFinanceEntryRequest {
+  title?: string;
+  type?: FinanceEntryType;
+  amount?: number;
+  source?: string | null;
+  purpose?: string | null;
+  usedBy?: string | null;
+  status?: FinanceStatus;
+  transactionDate?: string;
+  notes?: string | null;
+  managerId?: string | null;
 }

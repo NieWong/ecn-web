@@ -12,6 +12,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, name?: string) => Promise<{ message: string }>;
   setPassword: (email: string, password: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ message: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -71,6 +72,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       throw error;
     }
+  },
+
+  forgotPassword: async (email: string) => {
+    const response = await authAPI.forgotPassword(email);
+    return response;
   },
 
   logout: () => {

@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { postsAPI, usersAPI, categoriesAPI } from '@/lib/api';
 import { Post, PostStatus, Role, User, Visibility, MembershipLevel, MembershipLevelLabels, Category } from '@/lib/types';
+import { ContentType, ContentTypeLabels, inferContentTypeFromPost } from '@/lib/content-type';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { formatDate, formatNumber, getPostUrl } from '@/lib/helpers';
 import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, EyeOff, XCircle, Edit, Award, FolderOpen, Trash2, Plus } from 'lucide-react';
@@ -44,6 +45,7 @@ export default function AdminDashboardPage() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editCategorySlug, setEditCategorySlug] = useState('');
+  const [articleTypeFilter, setArticleTypeFilter] = useState<'ALL' | ContentType>('ALL');
 
   const isAdmin = user?.role === Role.ADMIN;
 
@@ -251,6 +253,18 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleToggleAccountant = async (userId: string, isAccountant: boolean) => {
+    try {
+      setActionLoading(userId, true);
+      await usersAPI.updateAccountantAccess(userId, isAccountant);
+      await loadDashboard();
+    } catch (err) {
+      console.error('Update accountant access failed:', err);
+    } finally {
+      setActionLoading(userId, false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Та энэ хэрэглэгчийг бүр мөсөн устгахдаа итгэлтэй байна уу?')) return;
     try {
@@ -350,6 +364,16 @@ export default function AdminDashboardPage() {
     }
     return null;
   }, [stats.totalPosts]);
+
+  const filteredPendingPosts = useMemo(() => {
+    if (articleTypeFilter === 'ALL') return pendingPosts;
+    return pendingPosts.filter((post) => inferContentTypeFromPost(post) === articleTypeFilter);
+  }, [pendingPosts, articleTypeFilter]);
+
+  const filteredAllPosts = useMemo(() => {
+    if (articleTypeFilter === 'ALL') return allPosts;
+    return allPosts.filter((post) => inferContentTypeFromPost(post) === articleTypeFilter);
+  }, [allPosts, articleTypeFilter]);
 
   if (authLoading) {
     return (
@@ -514,9 +538,21 @@ export default function AdminDashboardPage() {
               Нийтлэл баталгаажуулах
             </div>
             <p className="mt-1 text-sm text-gray-500">Хэрэглэгчид нийтлэл бичсэний дараа админ баталгаажуулах шаардлагатай.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant={articleTypeFilter === 'ALL' ? 'default' : 'outline'} onClick={() => setArticleTypeFilter('ALL')}>
+                Бүгд
+              </Button>
+              <Button size="sm" variant={articleTypeFilter === ContentType.CONTENT ? 'default' : 'outline'} onClick={() => setArticleTypeFilter(ContentType.CONTENT)}>
+                {ContentTypeLabels[ContentType.CONTENT]}
+              </Button>
+              <Button size="sm" variant={articleTypeFilter === ContentType.NEWS ? 'default' : 'outline'} onClick={() => setArticleTypeFilter(ContentType.NEWS)}>
+                {ContentTypeLabels[ContentType.NEWS]}
+              </Button>
+            </div>
             <div className="mt-4 rounded-xl border border-gray-200 bg-white">
-              <div className="grid grid-cols-5 gap-4 border-b border-gray-200 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <div className="grid grid-cols-6 gap-4 border-b border-gray-200 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 <span>Нийтлэл</span>
+                <span>Төрөл</span>
                 <span>Зохиогч</span>
                 <span>Огноо</span>
                 <span>Төлөв</span>
@@ -524,13 +560,13 @@ export default function AdminDashboardPage() {
               </div>
               {loading ? (
                 <div className="px-6 py-8 text-center text-sm text-gray-500">Ачаалж байна...</div>
-              ) : pendingPosts.length === 0 ? (
+              ) : filteredPendingPosts.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-gray-500">Баталгаажуулах нийтлэл байхгүй байна.</div>
               ) : (
-                pendingPosts.map((post) => (
+                filteredPendingPosts.map((post) => (
                   <div
                     key={post.id}
-                    className="grid grid-cols-5 items-center gap-4 border-b border-gray-100 px-6 py-4 text-sm"
+                    className="grid grid-cols-6 items-center gap-4 border-b border-gray-100 px-6 py-4 text-sm"
                   >
                     <div>
                       <Link href={getPostUrl(post)} className="font-medium text-gray-900 hover:text-blue-600">
@@ -540,6 +576,7 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-orange-600 mt-1">Сүүлийн сэтгэгдэл: {post.adminComment}</p>
                       )}
                     </div>
+                    <span className="text-xs text-gray-700">{ContentTypeLabels[inferContentTypeFromPost(post)]}</span>
                     <p className="text-gray-700">{post.author?.name || 'Үл мэдэх зохиогч'}</p>
                     <p className="text-gray-600">{formatDate(post.createdAt)}</p>
                     <span className="inline-flex w-fit items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-600">
@@ -660,6 +697,7 @@ export default function AdminDashboardPage() {
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Хэрэглэгч</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Имэйл</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Гишүүнчлэл</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Санхүү засварлах</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Роль</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Төлөв</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Үйлдэл</th>
@@ -668,11 +706,11 @@ export default function AdminDashboardPage() {
                   <tbody className="divide-y divide-gray-100">
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Ачаалж байна...</td>
+                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Ачаалж байна...</td>
                       </tr>
                     ) : allUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Хэрэглэгч байхгүй.</td>
+                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Хэрэглэгч байхгүй.</td>
                       </tr>
                     ) : (
                       allUsers.map((u) => (
@@ -700,6 +738,18 @@ export default function AdminDashboardPage() {
                                 {MembershipLevelLabels[u.membershipLevel] || u.membershipLevel}
                               </span>
                             )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={u.isAccountant}
+                                onChange={(e) => handleToggleAccountant(u.id, e.target.checked)}
+                                disabled={actionStates[u.id]}
+                                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                              />
+                              <span>{u.isAccountant ? 'Идэвхтэй' : 'Идэвхгүй'}</span>
+                            </label>
                           </td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
@@ -802,11 +852,23 @@ export default function AdminDashboardPage() {
               <FileText className="h-4 w-4" />
               Нийтлэл удирдлага
             </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant={articleTypeFilter === 'ALL' ? 'default' : 'outline'} onClick={() => setArticleTypeFilter('ALL')}>
+                Бүгд
+              </Button>
+              <Button size="sm" variant={articleTypeFilter === ContentType.CONTENT ? 'default' : 'outline'} onClick={() => setArticleTypeFilter(ContentType.CONTENT)}>
+                {ContentTypeLabels[ContentType.CONTENT]}
+              </Button>
+              <Button size="sm" variant={articleTypeFilter === ContentType.NEWS ? 'default' : 'outline'} onClick={() => setArticleTypeFilter(ContentType.NEWS)}>
+                {ContentTypeLabels[ContentType.NEWS]}
+              </Button>
+            </div>
             <div className="mt-4 rounded-xl border border-gray-200 bg-white overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Нийтлэл</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Төрөл</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Зохиогч</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Төлөв</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Баталгаажсан</th>
@@ -817,14 +879,14 @@ export default function AdminDashboardPage() {
                 <tbody className="divide-y divide-gray-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Ачаалж байна...</td>
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Ачаалж байна...</td>
                     </tr>
-                  ) : allPosts.length === 0 ? (
+                  ) : filteredAllPosts.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Нийтлэл байхгүй байна.</td>
+                      <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Нийтлэл байхгүй байна.</td>
                     </tr>
                   ) : (
-                    allPosts.map((post) => (
+                    filteredAllPosts.map((post) => (
                       <tr key={post.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <div>
@@ -834,6 +896,7 @@ export default function AdminDashboardPage() {
                             <p className="text-xs text-gray-500">ID: {post.id.slice(0, 8)}</p>
                           </div>
                         </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{ContentTypeLabels[inferContentTypeFromPost(post)]}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{post.author?.name || 'Үл мэдэх'}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${

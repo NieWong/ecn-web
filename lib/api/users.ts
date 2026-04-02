@@ -59,4 +59,10 @@ export const usersAPI = {
     const response = await apiClient.patch<User>(`/users/${id}/role`, { role });
     return response.data;
   },
+
+  // Admin: Toggle user accountant access
+  updateAccountantAccess: async (id: string, isAccountant: boolean) => {
+    const response = await apiClient.patch<User>(`/users/${id}/accountant`, { isAccountant });
+    return response.data;
+  },
 };

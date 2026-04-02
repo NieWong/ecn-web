@@ -4,4 +4,5 @@ export { filesAPI } from './files';
 export { usersAPI } from './users';
 export { categoriesAPI } from './categories';
 export { notificationsAPI } from './notifications';
+export { financeAPI } from './finance';
 export { apiClient } from './client';

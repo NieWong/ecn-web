@@ -9,6 +9,7 @@ import { TopStories } from '@/components/articles/top-stories';
 import { TrendingSidebar } from '@/components/articles/trending-sidebar';
 import { postsAPI, categoriesAPI } from '@/lib/api';
 import { Post, Category, PostStatus, Visibility } from '@/lib/types';
+import { inferContentTypeFromPost, ContentType, isNewsCategory } from '@/lib/content-type';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, TrendingUp, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
 import { calculateReadTime, formatDate, getImageUrl, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
@@ -28,7 +29,7 @@ export default function Home() {
   const loadCategories = async () => {
     try {
       const data = await categoriesAPI.list();
-      setCategories(data);
+      setCategories(data.filter((category) => !isNewsCategory(category)));
     } catch (err) {
       console.error('Failed to load categories:', err);
     }
@@ -47,7 +48,7 @@ export default function Home() {
         take: 20,
       });
 
-      setPosts(data);
+      setPosts(data.filter((post) => inferContentTypeFromPost(post) === ContentType.CONTENT));
     } catch (err: any) {
       console.error('Failed to load posts:', err);
 
@@ -175,39 +176,9 @@ export default function Home() {
         </section>
       )}
 
-      {categories.length > 0 && (
-        <section className="border-b border-gray-100 bg-white sticky top-[112px] z-30">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-4 py-4 overflow-x-auto scrollbar-hide">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-500 flex-shrink-0">
-                <TrendingUp className="h-4 w-4 text-[#e63946]" />
-                <span>Сэдэв:</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className={`category-pill whitespace-nowrap ${selectedCategory === null ? 'active' : ''}`}
-                >
-                  Бүгд
-                </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`category-pill whitespace-nowrap ${selectedCategory === category.id ? 'active' : ''}`}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       <main className="flex-1 py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {isLoading ? (
+          {isLoading ? (  
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-10 w-10 animate-spin text-[#e63946]" />
             </div>

@@ -12,6 +12,7 @@ import { postsAPI, categoriesAPI } from '@/lib/api';
 import { uploadArticleCover } from '@/lib/api/local-upload';
 import { generateSlug, getImageUrl, getCoverImageUrl } from '@/lib/helpers';
 import { PostStatus, Visibility, Post, Category } from '@/lib/types';
+import { ContentType, ContentTypeLabels, inferContentTypeFromPost, normalizeCategoryIdsByContentType } from '@/lib/content-type';
 import { ImagePlus, Loader2, PenSquare, Eye, EyeOff, Link2, CheckCircle, AlertCircle, Save, Send } from 'lucide-react';
 
 // Dynamically import RichEditor to avoid SSR issues with Quill
@@ -38,6 +39,7 @@ function WriteContent() {
   const [slug, setSlug] = useState('');
   const [summary, setSummary] = useState('');
   const [content, setContent] = useState('');
+  const [contentType, setContentType] = useState<ContentType>(ContentType.CONTENT);
   const [visibility, setVisibility] = useState<Visibility>(Visibility.PUBLIC);
   const [coverImagePath, setCoverImagePath] = useState<string | null>(null);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
@@ -89,6 +91,7 @@ function WriteContent() {
       if (post.categories) {
         setSelectedCategoryIds(post.categories.map(c => c.id));
       }
+      setContentType(inferContentTypeFromPost(post));
       setSlugLocked(true);
     } catch (err) {
       console.error('Failed to load post for editing:', err);
@@ -134,6 +137,13 @@ function WriteContent() {
       setError(null);
       setSuccess(null);
 
+      const normalizedCategoryIds = normalizeCategoryIdsByContentType(selectedCategoryIds, categories, contentType);
+
+      if (normalizedCategoryIds === null) {
+        setError('"ECN NEWS" ангилал олдсонгүй. Админ хэсгээс үүсгээд дахин оролдоно уу.');
+        return;
+      }
+
       if (editingPost) {
         // Update existing post
         await postsAPI.update(editingPost.id, {
@@ -144,8 +154,9 @@ function WriteContent() {
           contentJson: {},
           status,
           visibility,
+          contentType,
           coverImagePath: coverImagePath || undefined,
-          categoryIds: selectedCategoryIds,
+          categoryIds: normalizedCategoryIds,
         });
         setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай шинэчлэгдлээ!' : 'Ноорог хадгалагдлаа!');
       } else {
@@ -158,8 +169,9 @@ function WriteContent() {
           contentJson: {},
           status,
           visibility,
+          contentType,
           coverImagePath: coverImagePath || undefined,
-          categoryIds: selectedCategoryIds,
+          categoryIds: normalizedCategoryIds,
         });
         setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай нийтлэгдлээ!' : 'Ноорог хадгалагдлаа!');
       }
@@ -360,6 +372,42 @@ function WriteContent() {
 
               {/* Visibility */}
               <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Контентын төрөл</p>
+                <div className="space-y-3 mb-6">
+                  <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-colors ${
+                    contentType === ContentType.CONTENT
+                      ? 'border-[#e63946] bg-red-50/50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      checked={contentType === ContentType.CONTENT}
+                      onChange={() => setContentType(ContentType.CONTENT)}
+                      className="sr-only"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900">{ContentTypeLabels[ContentType.CONTENT]}</p>
+                      <p className="text-xs text-gray-500">Нүүр хуудсын контент хэсэгт харагдана</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-colors ${
+                    contentType === ContentType.NEWS
+                      ? 'border-[#e63946] bg-red-50/50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      checked={contentType === ContentType.NEWS}
+                      onChange={() => setContentType(ContentType.NEWS)}
+                      className="sr-only"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900">{ContentTypeLabels[ContentType.NEWS]}</p>
+                      <p className="text-xs text-gray-500">Мэдээний хуудсанд харагдана</p>
+                    </div>
+                  </label>
+                </div>
+
                 <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Харагдац</p>
                 <div className="space-y-3">
                   <label className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition-colors ${
@@ -402,6 +450,11 @@ function WriteContent() {
               {/* Categories */}
               <div className="premium-card p-6">
                 <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Ангилал</p>
+                {contentType === ContentType.NEWS && (
+                  <p className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                    Мэдээ сонгосон тул "ECN NEWS" ангилал автоматаар нэмэгдэнэ.
+                  </p>
+                )}
                 {isLoadingCategories ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-5 w-5 animate-spin text-gray-400" />

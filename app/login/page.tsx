@@ -10,11 +10,13 @@ import { Loader2, Mail, Lock, AlertCircle, ArrowRight, Sparkles } from 'lucide-r
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const forgotPassword = useAuthStore((state) => state.forgotPassword);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +48,21 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError('Нууц үг сэргээхийн тулд имэйлээ оруулна уу.');
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await forgotPassword(email.trim());
+      setForgotMessage(response.message || 'Нууц үг сэргээх хүсэлт илгээгдлээ. Админтай холбогдоно уу.');
+    } catch {
+      setForgotMessage('Сэргээх хүсэлт илгээгдлээ. Админтай холбогдоно уу.');
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding */}
@@ -55,14 +72,15 @@ export default function LoginPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl transition-transform group-hover:scale-105">
-              E
+            <div className="flex h-12 w-16 items-center justify-center rounded-2xl bg-brand p-1 transition-transform group-hover:scale-105 overflow-hidden">
+              <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-xl object-cover" />
             </div>
             <div>
               <span className="text-2xl font-bold tracking-tight text-white">ECN</span>
               <span className="text-2xl font-light tracking-tight text-white/60">.Club</span>
             </div>
           </Link>
+          <img src="/club_logo.png" alt="ECN Club" className="mt-6 h-7 w-auto object-contain" />
           
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/80">
@@ -90,8 +108,8 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e63946] text-white font-bold text-xl">
-                E
+              <div className="flex h-10 w-13 items-center justify-center rounded-xl bg-brand p-1 overflow-hidden">
+                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
               </div>
             </Link>
           </div>
@@ -112,6 +130,12 @@ export default function LoginPage() {
                   <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
+              </div>
+            )}
+
+            {forgotMessage && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm text-blue-800">{forgotMessage}</p>
               </div>
             )}
 
@@ -192,9 +216,13 @@ export default function LoginPage() {
                 </Link>
               </p>
               <p>
-                <Link href="/set-password" className="text-gray-500 hover:text-gray-700 transition-colors">
-                  Нууц үг тохируулах уу?
-                </Link>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Нууц үгээ мартсан уу?
+                </button>
               </p>
             </div>
           </form>

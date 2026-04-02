@@ -21,4 +21,9 @@ export const authAPI = {
     const response = await apiClient.get<User | null>('/auth/me');
     return response.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const response = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
 };
