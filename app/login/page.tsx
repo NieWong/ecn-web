@@ -216,6 +216,15 @@ export default function LoginPage() {
                 </Link>
               </p>
               <p>
+                <span className="text-gray-600">Шинэ хэрэглэгч үү? </span>
+                <Link
+                  href={email.trim() ? `/set-password?email=${encodeURIComponent(email.trim())}` : '/set-password'}
+                  className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors"
+                >
+                  Нууц үг тохируулах
+                </Link>
+              </p>
+              <p>
                 <button
                   type="button"
                   onClick={handleForgotPassword}

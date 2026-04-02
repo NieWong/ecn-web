@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Loader2, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function SetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setPasswordAction = useAuthStore((state) => state.setPassword);
 
   const [email, setEmail] = useState('');
@@ -16,6 +18,17 @@ export default function SetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPrefilledEmail, setIsPrefilledEmail] = useState(false);
+
+  useEffect(() => {
+    const queryEmail = searchParams.get('email');
+    if (queryEmail) {
+      setEmail(queryEmail);
+      setIsPrefilledEmail(true);
+      return;
+    }
+    setIsPrefilledEmail(false);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,12 +120,18 @@ export default function SetPasswordPage() {
                   type="email"
                   autoComplete="email"
                   required
+                  readOnly={isPrefilledEmail}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-black/10 bg-white py-3 pl-11 pr-4 text-gray-900 placeholder-gray-400 focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/10"
+                  className={`w-full rounded-2xl border border-black/10 py-3 pl-11 pr-4 text-gray-900 placeholder-gray-400 focus:border-black/40 focus:outline-none focus:ring-2 focus:ring-black/10 ${
+                    isPrefilledEmail ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                  }`}
                   placeholder="таны@имэйл.com"
                 />
               </div>
+              {isPrefilledEmail && (
+                <p className="mt-1 text-xs text-gray-500">Имэйл автоматаар бөглөгдсөн тул өөрчлөхгүй.</p>
+              )}
             </div>
 
             <div>

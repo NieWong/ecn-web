@@ -70,6 +70,11 @@ export default function RegisterPage() {
                 Нэвтрэх
               </Button>
             </Link>
+            <Link href={email.trim() ? `/set-password?email=${encodeURIComponent(email.trim())}` : '/set-password'}>
+              <Button variant="outline" className="w-full rounded-xl h-12 border-gray-200">
+                Админ зөвшөөрсний дараа нууц үг тохируулах
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
