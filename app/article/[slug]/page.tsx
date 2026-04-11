@@ -181,7 +181,7 @@ export default function ArticlePage() {
         <article className="pb-16 pt-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Header content */}
-            <div className="w-full">
+            <div className="mx-auto max-w-5xl">
               <div className="flex flex-wrap items-center gap-2">
                 {post.visibility === 'PRIVATE' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700">
@@ -294,7 +294,7 @@ export default function ArticlePage() {
               )}
             </div>
 
-            <div className="w-full">
+            <div className="mx-auto max-w-5xl">
               <div
                 className="
       article-content prose prose-lg mx-auto font-source-serif text-gray-800
@@ -308,7 +308,7 @@ export default function ArticlePage() {
             </div>
 
             {post.images && post.images.length > 0 && (
-              <div className="mt-8 w-full">
+              <div className="mx-auto mt-8 max-w-5xl">
                 <div className="rounded-xl border border-gray-200 bg-white p-5">
                   <h3 className="text-base font-semibold text-gray-900">Хавсралт файлууд</h3>
                   <div className="mt-3 space-y-2">
@@ -342,7 +342,7 @@ export default function ArticlePage() {
             )}
 
             {/* Bottom sections */}
-            <div className="w-full">
+            <div className="mx-auto max-w-5xl">
               <div className="mt-12 pt-8 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">
