@@ -10,78 +10,25 @@ import {
   Post,
   PostStatus,
   Role,
-  User,
   Visibility,
-  MembershipLevel,
-  MembershipLevelLabels,
   Category,
-  Notification,
-  NotificationType,
 } from '@/lib/types';
 import { ContentType, ContentTypeLabels, inferContentTypeFromPost } from '@/lib/content-type';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { formatDate, formatNumber, getPostUrl } from '@/lib/helpers';
-import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, XCircle, Edit, Award, FolderOpen, Trash2, Plus, KeyRound } from 'lucide-react';
+import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, XCircle, Edit, FolderOpen, Trash2, Plus } from 'lucide-react';
+import { useUserManagement } from '@/hooks/useUserManagement';
+import { UsersTable } from '@/components/admin/UsersTable';
+import { UserActionsQueue } from '@/components/admin/UserActionsQueue';
 
 const MAX_METRICS_SAMPLE = 100;
 
-const ROLE_LABELS: Record<Role, string> = {
-  [Role.ADMIN]: 'Админ',
-  [Role.USER]: 'Хэрэглэгч',
-};
-
-type PasswordResetRequest = {
-  notificationId: string;
-  requestedByUserId: string;
-  email: string;
-  name: string | null;
-  createdAt: string;
-};
-
-const getPrivilegeSummary = (user: User) => {
-  const parts: string[] = [];
-  if (user.role === Role.ADMIN) parts.push('Системийн удирдлага');
-  if (user.isAccountant) parts.push('Санхүүгийн эрх');
-  if (parts.length === 0) return 'Стандарт эрх';
-  return parts.join(' • ');
-};
-
-const extractPasswordResetRequests = (notifications: Notification[]): PasswordResetRequest[] => {
-  const requests = notifications
-    .filter((notification) => {
-      if (notification.type !== NotificationType.SYSTEM) return false;
-      const metadata = notification.metadata as Record<string, unknown> | null;
-      return metadata?.kind === 'PASSWORD_RESET_REQUEST';
-    })
-    .map((notification) => {
-      const metadata = (notification.metadata as Record<string, unknown> | null) ?? {};
-      return {
-        notificationId: notification.id,
-        requestedByUserId: String(metadata.requestedByUserId || ''),
-        email: String(metadata.email || ''),
-        name: metadata.name ? String(metadata.name) : null,
-        createdAt: notification.createdAt,
-      };
-    })
-    .filter((request) => request.requestedByUserId && request.email)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  const deduped = new Map<string, PasswordResetRequest>();
-  requests.forEach((request) => {
-    if (!deduped.has(request.requestedByUserId)) {
-      deduped.set(request.requestedByUserId, request);
-    }
-  });
-
-  return Array.from(deduped.values());
-};
-
 export default function AdminDashboardPage() {
   const { user, isLoading: authLoading } = useAuthStore();
-  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+
+  // Post and content management state
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
-  const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -93,14 +40,10 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionStates, setActionStates] = useState<Record<string, boolean>>({});
-  const [rejectingPostId, setRejectingPostId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'articles' | 'approval' | 'categories'>('approval');
-  
+
   // Category management states
   const [categories, setCategories] = useState<Category[]>([]);
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategorySlug, setNewCategorySlug] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -108,21 +51,11 @@ export default function AdminDashboardPage() {
   const [editCategorySlug, setEditCategorySlug] = useState('');
   const [articleTypeFilter, setArticleTypeFilter] = useState<'ALL' | ContentType>('ALL');
 
+  // Post editing state
+  const [rejectingPostId, setRejectingPostId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
   const isAdmin = user?.role === Role.ADMIN;
-
-  useEffect(() => {
-    if (isAdmin) {
-      loadDashboard();
-    }
-  }, [isAdmin, loadDashboard]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    const interval = setInterval(() => {
-      loadDashboard(true);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [isAdmin, loadDashboard]);
 
   const loadDashboard = useCallback(async (silent = false) => {
     try {
@@ -152,12 +85,10 @@ export default function AdminDashboardPage() {
         (post) => post.status === PostStatus.PUBLISHED && post.isApproved
       ).length;
 
-      setPendingUsers(pending);
-      setAllUsers(users);
+      userManagement.updateUsersData(pending, users, notifications);
       setPendingPosts(pendingApprovalList);
       setAllPosts(postsAll);
       setCategories(categoriesList);
-      setPasswordResetRequests(extractPasswordResetRequests(notifications));
       setStats({
         totalUsers: users.length,
         activeUsers: activeUsers.length,
@@ -176,32 +107,30 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  // Memoized callback for refreshing dashboard after user actions
+  const handleDataRefresh = useCallback(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  // User management state and actions (initialized after loadDashboard)
+  const userManagement = useUserManagement(handleDataRefresh);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadDashboard();
+    }
+  }, [isAdmin, loadDashboard]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const interval = setInterval(() => {
+      loadDashboard(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isAdmin, loadDashboard]);
+
   const setActionLoading = (id: string, isBusy: boolean) => {
     setActionStates((prev) => ({ ...prev, [id]: isBusy }));
-  };
-
-  const handleApproveUser = async (id: string) => {
-    try {
-      setActionLoading(id, true);
-      await usersAPI.approve(id);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Approve user failed:', err);
-    } finally {
-      setActionLoading(id, false);
-    }
-  };
-
-  const handleRejectUser = async (id: string) => {
-    try {
-      setActionLoading(id, true);
-      await usersAPI.deactivate(id);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Deactivate user failed:', err);
-    } finally {
-      setActionLoading(id, false);
-    }
   };
 
   const handlePublishPost = async (id: string) => {
@@ -245,82 +174,6 @@ export default function AdminDashboardPage() {
       console.error('Reject post failed:', err);
     } finally {
       setActionLoading(id, false);
-    }
-  };
-
-  // Update user membership level
-  const handleUpdateMembership = async (userId: string, level: MembershipLevel) => {
-    try {
-      setActionLoading(userId, true);
-      await usersAPI.updateMembershipLevel(userId, level);
-      setEditingUserId(null);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Update membership failed:', err);
-    } finally {
-      setActionLoading(userId, false);
-    }
-  };
-
-  // Update user role
-  const handleUpdateRole = async (userId: string, role: Role) => {
-    try {
-      setActionLoading(userId, true);
-      await usersAPI.updateRole(userId, role);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Update role failed:', err);
-    } finally {
-      setActionLoading(userId, false);
-    }
-  };
-
-  const handleToggleAccountant = async (userId: string, isAccountant: boolean) => {
-    try {
-      setActionLoading(userId, true);
-      await usersAPI.updateAccountantAccess(userId, isAccountant);
-      await loadDashboard();
-    } catch (err) {
-      console.error('Update accountant access failed:', err);
-    } finally {
-      setActionLoading(userId, false);
-    }
-  };
-
-  const handleAllowPasswordReset = async (request: PasswordResetRequest) => {
-    try {
-      setActionLoading(request.requestedByUserId, true);
-      await usersAPI.allowPasswordReset(request.requestedByUserId);
-      if (request.notificationId) {
-        await notificationsAPI.markAsRead(request.notificationId);
-      }
-      await loadDashboard();
-    } catch (err) {
-      console.error('Allow password reset failed:', err);
-      alert('Нууц үг сэргээх хүсэлтийг зөвшөөрөхөд алдаа гарлаа');
-    } finally {
-      setActionLoading(request.requestedByUserId, false);
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Та энэ хэрэглэгчийг бүр мөсөн устгахдаа итгэлтэй байна уу?')) return;
-    try {
-      setActionLoading(userId, true);
-      await usersAPI.deleteUser(userId);
-      await loadDashboard();
-    } catch (err: unknown) {
-      console.error('Delete user failed:', err);
-      const message =
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err &&
-        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
-          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          : 'Хэрэглэгч устгахад алдаа гарлаа';
-      alert(message);
-    } finally {
-      setActionLoading(userId, false);
     }
   };
 
@@ -688,265 +541,46 @@ export default function AdminDashboardPage() {
 
         {/* Users Management Section */}
         {activeTab === 'users' && (
-          <section className="mt-6">
-            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
-              <Users className="h-4 w-4" />
-              Хэрэглэгчийн удирдлага
+          <section className="mt-6 space-y-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-blue-600">
+                <Users className="h-4 w-4" />
+                Хэрэглэгчийн удирдлага
+              </div>
+              <input
+                type="text"
+                placeholder="Нэр, имэйл, ID-р хайх..."
+                value={userManagement.searchQuery}
+                onChange={(e) => userManagement.setSearchQuery(e.target.value)}
+                className="flex-1 max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
-            {/* Pending Users */}
-            {pendingUsers.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Хүлээгдэж буй бүртгэл ({pendingUsers.length})</h3>
-                <div className="rounded-xl border border-orange-200 bg-orange-50">
-                  {pendingUsers.map((pending) => (
-                    <div
-                      key={pending.id}
-                      className="flex items-center justify-between border-b border-orange-100 px-6 py-4 text-sm last:border-0"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{pending.name || 'Нэргүй хэрэглэгч'}</p>
-                        <p className="text-gray-600">{pending.email}</p>
-                        <p className="text-xs text-gray-500">{formatDate(pending.createdAt)}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApproveUser(pending.id)}
-                          disabled={actionStates[pending.id]}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Зөвшөөрөх
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRejectUser(pending.id)}
-                          disabled={actionStates[pending.id]}
-                        >
-                          Татгалзах
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <UserActionsQueue
+              pendingUsers={userManagement.pendingUsers}
+              passwordResetRequests={userManagement.passwordResetRequests}
+              onApprovePending={userManagement.approveUser}
+              onRejectPending={userManagement.rejectUser}
+              onAllowPasswordReset={userManagement.allowPasswordReset}
+              getActionState={userManagement.getActionState}
+            />
 
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                Нууц үг сэргээх хүсэлт ({passwordResetRequests.length})
-              </h3>
-              <div className="rounded-xl border border-amber-200 bg-amber-50">
-                {passwordResetRequests.length === 0 ? (
-                  <div className="px-6 py-6 text-sm text-amber-900/80">Шинэ хүсэлт байхгүй байна.</div>
-                ) : (
-                  passwordResetRequests.map((request) => (
-                    <div
-                      key={request.notificationId}
-                      className="flex flex-col gap-3 border-b border-amber-100 px-6 py-4 text-sm last:border-0 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div>
-                        <p className="font-medium text-gray-900">{request.name || request.email}</p>
-                        <p className="text-gray-600">{request.email}</p>
-                        <p className="text-xs text-gray-500">Хүсэлт: {formatDate(request.createdAt)}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/set-password?email=${encodeURIComponent(request.email)}`}
-                          className="inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100"
-                        >
-                          Set-password холбоос
-                        </Link>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAllowPasswordReset(request)}
-                          disabled={actionStates[request.requestedByUserId]}
-                        >
-                          <KeyRound className="h-4 w-4" />
-                          Set password зөвшөөрөх
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* All Users */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Бүх хэрэглэгчид</h3>
-              <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
-                <table className="min-w-245 divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Хэрэглэгч</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Имэйл</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Гишүүнчлэл</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Санхүү засварлах</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Эрх</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Төлөв</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Үйлдэл</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Ачаалж байна...</td>
-                      </tr>
-                    ) : allUsers.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Хэрэглэгч байхгүй.</td>
-                      </tr>
-                    ) : (
-                      allUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 align-top">
-                            <p className="font-medium text-gray-900">{u.name || 'Нэргүй'}</p>
-                            <p className="text-xs text-gray-500">ID: {u.id.slice(0, 8)}</p>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.email}</td>
-                          <td className="px-4 py-3 align-top whitespace-nowrap">
-                            {editingUserId === u.id ? (
-                              <select
-                                value={u.membershipLevel}
-                                onChange={(e) => handleUpdateMembership(u.id, e.target.value as MembershipLevel)}
-                                className="border rounded px-2 py-1 text-sm"
-                                disabled={actionStates[u.id]}
-                              >
-                                {Object.entries(MembershipLevelLabels).map(([value, label]) => (
-                                  <option key={value} value={value}>{label}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
-                                <Award className="h-3 w-3" />
-                                {MembershipLevelLabels[u.membershipLevel] || u.membershipLevel}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 align-top whitespace-nowrap">
-                            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                              <input
-                                type="checkbox"
-                                checked={u.isAccountant}
-                                onChange={(e) => handleToggleAccountant(u.id, e.target.checked)}
-                                disabled={actionStates[u.id]}
-                                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                              />
-                              <span>{u.isAccountant ? 'Идэвхтэй' : 'Идэвхгүй'}</span>
-                            </label>
-                          </td>
-                          <td className="px-4 py-3 align-top whitespace-nowrap">
-                            <div className="flex flex-col gap-1">
-                              <span className={`inline-flex w-fit rounded-full px-2 py-1 text-xs font-medium ${
-                                u.role === Role.ADMIN ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {ROLE_LABELS[u.role]}
-                              </span>
-                              <span className="text-xs text-gray-500">{getPrivilegeSummary(u)}</span>
-                              <span className="text-xs text-gray-500">{u.role}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 align-top whitespace-nowrap">
-                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {u.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <div className="flex gap-2">
-                              {editingUserId === u.id ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingUserId(null)}
-                                >
-                                  Болих
-                                </Button>
-                              ) : (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setEditingUserId(u.id)}
-                                    disabled={actionStates[u.id]}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                  {u.role !== Role.ADMIN && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleUpdateRole(u.id, Role.ADMIN)}
-                                      disabled={actionStates[u.id]}
-                                    >
-                                      Админ болгох
-                                    </Button>
-                                  )}
-                                  {u.role === Role.ADMIN && u.id !== user?.id && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleUpdateRole(u.id, Role.USER)}
-                                      disabled={actionStates[u.id]}
-                                    >
-                                      Админ болиулах
-                                    </Button>
-                                  )}
-                                  {u.isActive ? (
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => handleRejectUser(u.id)}
-                                      disabled={actionStates[u.id] || u.id === user?.id}
-                                    >
-                                      Идэвхгүй
-                                    </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleApproveUser(u.id)}
-                                      disabled={actionStates[u.id]}
-                                    >
-                                      Идэвхжүүлэх
-                                    </Button>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleDeleteUser(u.id)}
-                                    disabled={actionStates[u.id] || u.id === user?.id}
-                                  >
-                                    Устгах
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                      handleAllowPasswordReset({
-                                        notificationId: '',
-                                        requestedByUserId: u.id,
-                                        email: u.email,
-                                        name: u.name,
-                                        createdAt: u.updatedAt,
-                                      })
-                                    }
-                                    disabled={actionStates[u.id]}
-                                  >
-                                    Нууц үг reset
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            <div>
+              <h4 className="mb-3 text-sm font-semibold text-gray-900">Бүх хэрэглэгчид</h4>
+              <UsersTable
+                users={userManagement.filteredAllUsers}
+                loading={loading}
+                currentUserId={user?.id}
+                editingUserId={userManagement.editingUserId}
+                onEditingUserChange={userManagement.setEditingUserId}
+                onApprove={userManagement.approveUser}
+                onReject={userManagement.rejectUser}
+                onUpdateMembership={userManagement.updateMembership}
+                onUpdateRole={userManagement.updateRole}
+                onToggleAccountant={userManagement.toggleAccountant}
+                onDelete={userManagement.deleteUser}
+                getActionState={userManagement.getActionState}
+              />
             </div>
           </section>
         )}

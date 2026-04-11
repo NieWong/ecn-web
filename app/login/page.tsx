@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [forgotMessage, setForgotMessage] = useState<string | null>(null);
+  const [showResetForm, setShowResetForm] = useState(false);
 
   const getLoginErrorMessage = (err: unknown) => {
     const status =
@@ -78,9 +79,11 @@ export default function LoginPage() {
 
     try {
       setError(null);
+      setShowResetForm(true);
       const response = await forgotPassword(email.trim());
       setForgotMessage(response.message || 'Нууц үг сэргээх хүсэлт илгээгдлээ. Админ шалгасны дараа дахин нууц үг тохируулах боломжтой болно.');
     } catch {
+      setShowResetForm(true);
       setForgotMessage('Нууц үг сэргээх хүсэлт илгээгдлээ. Админ шалгасны дараа дахин нууц үг тохируулах боломжтой болно.');
     }
   };
@@ -138,14 +141,67 @@ export default function LoginPage() {
 
           <div className="text-center lg:text-left">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-              Тавтай морилно уу
+              {showResetForm ? 'Нууц үг сэргээлт' : 'Тавтай морилно уу'}
             </h2>
             <p className="mt-3 text-gray-600">
-              Нэвтрэж унш, бичээрэй.
+              {showResetForm ? 'Таны хүсэлт илгээгдлээ' : 'Нэвтрэж унш, бичээрэй.'}
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          {showResetForm ? (
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-green-100 p-3 mt-1">
+                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-green-900">Нууц үг сэргээх хүсэлт илгээгдлээ</p>
+                    <p className="mt-1 text-sm text-green-700">{forgotMessage}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 rounded-xl bg-gray-50 p-6 border border-gray-200">
+                <h3 className="font-semibold text-gray-900">Дараагийн алхамууд:</h3>
+                <ol className="space-y-3 text-sm text-gray-700">
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">1</span>
+                    <span>Админ таны хүсэлтийг шалгач баталгаажуулна</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">2</span>
+                    <span>Зөвшөөрлийн мэдэгдэл авах болно</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">3</span>
+                    <span>Нууц үг шинэчлэх хуудсыг нээж шинэ нууц үг тохируулна</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={() => {
+                    setShowResetForm(false);
+                    setForgotMessage(null);
+                    setPassword('');
+                  }}
+                  className="w-full btn-primary h-12"
+                >
+                  Нэвтрэх дээр буцах
+                </Button>
+                <Link href="/notifications">
+                  <Button variant="outline" className="w-full h-12">
+                    Мэдэгдэло хүлээх
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                 <div className="flex items-start gap-3">
@@ -256,7 +312,8 @@ export default function LoginPage() {
                 </button>
               </p>
             </div>
-          </form>
+            </form>
+          )}
         </div>
       </div>
     </div>
