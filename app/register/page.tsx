@@ -155,14 +155,11 @@ export default function RegisterPage() {
           <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#e63946]/10 px-3 py-1.5 text-xs font-semibold text-[#e63946] mb-4">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Үнэгүй гишүүнчлэл</span>
+              <span>Гишүүнчлэл</span>
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
               Бүртгүүлэх
             </h2>
-            <p className="mt-3 text-gray-600">
-              Өнөөдөр зохиогчийн аяллаа эхлүүлээрэй.
-            </p>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>

@@ -84,16 +84,24 @@ export function Header() {
     { label: 'Гишүүд', href: '/members' },
   ];
 
-  const contentLinks = [
+  const contentLinks: Array<{
+    label: string;
+    href: string;
+    showLock?: boolean;
+    hint?: string;
+  }> = [
     { label: 'Нийтлэлүүд', href: '/' },
     { label: 'Мэдээ, мэдээлэл', href: '/news' },
-    {
+  ];
+
+  if (isAuthenticated) {
+    contentLinks.push({
       label: 'Нийтлэл бичих',
       href: '/write',
       showLock: !canCreatePosts,
       hint: !canCreatePosts ? 'Зөвхөн гишүүд нийтлэл бичнэ' : undefined,
-    },
-  ];
+    });
+  }
 
   if (canAccessOnlyMembers) {
     contentLinks.push({ label: 'Only Members', href: '/only-members' });

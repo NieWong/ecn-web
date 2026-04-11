@@ -143,9 +143,9 @@ export default function LoginPage() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
               {showResetForm ? 'Нууц үг сэргээлт' : 'Тавтай морилно уу'}
             </h2>
-            <p className="mt-3 text-gray-600">
+            {/* <p className="mt-3 text-gray-600">
               {showResetForm ? 'Таны хүсэлт илгээгдлээ' : 'Нэвтрэж унш, бичээрэй.'}
-            </p>
+            </p> */}
           </div>
 
           {showResetForm ? (
@@ -290,7 +290,7 @@ export default function LoginPage() {
               <p>
                 <span className="text-gray-600">Бүртгэлгүй юу? </span>
                 <Link href="/register" className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors">
-                  Үнэгүй бүртгүүлэх
+                  Бүртгүүлэх
                 </Link>
               </p>
               <p>

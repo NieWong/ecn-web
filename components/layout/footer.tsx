@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Facebook, Twitter, Mail, Youtube, Instagram, ArrowUpRight, MapPin, Phone } from 'lucide-react';
+import { Facebook, Twitter, Mail, Youtube, Instagram, ArrowUpRight, MapPin, Phone, X } from 'lucide-react';
 
 export function Footer() {
   const currentYear = new Date().getUTCFullYear();
@@ -23,10 +23,10 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { icon: Facebook, href: '#', label: 'Facebook' },
-    { icon: Twitter, href: '#', label: 'X (Twitter)' },
-    { icon: Instagram, href: '#', label: 'Instagram' },
-    { icon: Youtube, href: '#', label: 'YouTube' },
+    { icon: Facebook, href: 'https://www.facebook.com/CLUBofUFE?mibextid=wwXIfr&mibextid=wwXIfr', label: 'Facebook' },
+    { icon: X, href: '#', label: 'X (Twitter)' },
+    { icon: Instagram, href: 'https://www.instagram.com/economistsclub?igsh=MTJpc2w1Z3h1YWgxOA==', label: 'Instagram' },
+    { icon: Youtube, href: 'https://youtube.com/@theeconomistsclub?si=kQZrZrm98uEwwDSh', label: 'YouTube' },
   ];
 
   return (
@@ -116,7 +116,7 @@ export function Footer() {
                   </li>
                   <li className="flex items-center gap-2 text-sm text-white/70">
                     <Phone className="h-4 w-4" />
-                    <span>+976 0000 0000</span>
+                    <span>+976 8818 0818</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm text-white/70">
                     <Mail className="h-4 w-4" />

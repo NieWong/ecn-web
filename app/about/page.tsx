@@ -134,7 +134,6 @@ export default function AboutPage() {
     () => [
       { value: String(articleCount), label: 'Нийтлэлүүд сошиал орчинд' },
       { value: String(contentTypeCount), label: 'Төрлийн контент, бүтээлүүд' },
-      { value: String(eventCount), label: 'Удаагийн арга хэмжээ' },
       { value: String(memberCount), label: 'Нийт гишүүд' },
     ],
     [articleCount, contentTypeCount, eventCount, memberCount]
@@ -185,8 +184,8 @@ export default function AboutPage() {
         </section>
 
         {/* Stats Section */}
-        <section className="relative -mt-12 z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="relative -mt-12 z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {stats.map((stat) => (
               <div key={stat.label} className="premium-card p-6 text-center">
                 <p className="text-3xl sm:text-4xl font-bold text-[#e63946]">{stat.value}</p>
@@ -211,7 +210,7 @@ export default function AboutPage() {
                 Эдийн засагчдын клуб нь <strong>2019 оны 3-р сард</strong> байгуудагдсан. Анх СЭЗИС-н Экономиксийн тэнхимийн багш С. Өнөр, Экономиксийн тэнхимийн оюутнууд болох Э. Хосбаяр, Э. Тамир, Х. Төгсбуян нарын бүрэлдэхүүнтэй байгуулагдсан юм.
               </p>
               <p className="mt-4 text-gray-700 leading-relaxed text-lg">
-                Үүнээс хойш нийт <strong>9 удаагийн элсэлт</strong> авсан бөгөөд <strong>24 үндсэн гишүүн</strong>, <strong>25 хүндэт гишүүнтэйгээр</strong> үйл ажиллагаагаа явуулж байна.
+                Үүнээс хойш нийт <strong>15 удаагийн элсэлт</strong> авсан бөгөөд <strong>21 үндсэн гишүүн</strong>, <strong>32 хүндэт гишүүнтэйгээр</strong> үйл ажиллагаагаа явуулж байна.
               </p>
 
               <div className="mt-8 p-6 rounded-xl bg-gradient-to-r from-[#e63946]/10 to-[#ff6b6b]/10 border border-[#e63946]/20">
