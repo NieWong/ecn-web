@@ -6,7 +6,7 @@ import Link from 'next/link';
 import DOMPurify from 'dompurify';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { postsAPI } from '@/lib/api';
+import { postsAPI, filesAPI } from '@/lib/api';
 import { Post, Role } from '@/lib/types';
 import {
   getCoverImageUrl,
@@ -30,6 +30,8 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  FileText,
+  Download,
 } from 'lucide-react';
 
 export default function ArticlePage() {
@@ -43,6 +45,7 @@ export default function ArticlePage() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug) loadPost();
@@ -83,6 +86,26 @@ export default function ArticlePage() {
       alert('Нийтлэл устгахад алдаа гарлаа.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (fileId: string, filename: string) => {
+    try {
+      setDownloadingFileId(fileId);
+      const blob = await filesAPI.download(fileId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download attachment:', err);
+      alert('Файл татахад алдаа гарлаа.');
+    } finally {
+      setDownloadingFileId(null);
     }
   };
 
@@ -271,7 +294,7 @@ export default function ArticlePage() {
               )}
             </div>
 
-            <div className="mx-auto max-w-5xl">
+            <div className="w-full">
               <div
                 className="
       article-content prose prose-lg max-w-none font-source-serif text-gray-800
@@ -283,6 +306,40 @@ export default function ArticlePage() {
                 dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             </div>
+
+            {post.images && post.images.length > 0 && (
+              <div className="mt-8 w-full">
+                <div className="rounded-xl border border-gray-200 bg-white p-5">
+                  <h3 className="text-base font-semibold text-gray-900">Хавсралт файлууд</h3>
+                  <div className="mt-3 space-y-2">
+                    {post.images.map((postImage) => (
+                      <div
+                        key={postImage.fileId}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2"
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-500" />
+                          <span className="truncate text-sm text-gray-700">{postImage.file.originalName}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadAttachment(postImage.file.id, postImage.file.originalName)}
+                          disabled={downloadingFileId === postImage.file.id}
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-[#e63946] hover:text-[#e63946] disabled:opacity-50"
+                        >
+                          {downloadingFileId === postImage.file.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
+                          Татах
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Bottom sections (narrow, aligned same as header) */}
             <div className="mx-auto max-w-5xl">

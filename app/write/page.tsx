@@ -8,12 +8,12 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { postsAPI, categoriesAPI } from '@/lib/api';
+import { postsAPI, categoriesAPI, filesAPI } from '@/lib/api';
 import { uploadArticleCover } from '@/lib/api/local-upload';
 import { generateSlug, getImageUrl, getCoverImageUrl } from '@/lib/helpers';
-import { PostStatus, Visibility, Post, Category } from '@/lib/types';
+import { PostStatus, Visibility, Post, Category, MembershipLevel, FileKind } from '@/lib/types';
 import { ContentType, ContentTypeLabels, inferContentTypeFromPost, normalizeCategoryIdsByContentType } from '@/lib/content-type';
-import { ImagePlus, Loader2, PenSquare, Eye, EyeOff, Link2, CheckCircle, AlertCircle, Save, Send } from 'lucide-react';
+import { ImagePlus, Loader2, PenSquare, Eye, EyeOff, Link2, CheckCircle, AlertCircle, Save, Send, FileText, Upload, X, Lock } from 'lucide-react';
 
 // Dynamically import RichEditor to avoid SSR issues with Quill
 const RichEditor = dynamic(() => import('@/components/ui/rich-editor').then(mod => ({ default: mod.RichEditor })), {
@@ -45,9 +45,15 @@ function WriteContent() {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [slugLocked, setSlugLocked] = useState(false);
+  const [attachments, setAttachments] = useState<Array<{ id: string; originalName: string; mimeType: string; size: number }>>([]);
+
+  const canCreatePost =
+    !!user &&
+    (user.role === 'ADMIN' || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
 
   // Load categories
   useEffect(() => {
@@ -90,6 +96,18 @@ function WriteContent() {
       // Load categories
       if (post.categories) {
         setSelectedCategoryIds(post.categories.map(c => c.id));
+      }
+      if (post.images && post.images.length > 0) {
+        setAttachments(
+          post.images.map((image) => ({
+            id: image.file.id,
+            originalName: image.file.originalName,
+            mimeType: image.file.mimeType,
+            size: image.file.size,
+          }))
+        );
+      } else {
+        setAttachments([]);
       }
       setContentType(inferContentTypeFromPost(post));
       setSlugLocked(true);
@@ -157,6 +175,7 @@ function WriteContent() {
           contentType,
           coverImagePath: coverImagePath || undefined,
           categoryIds: normalizedCategoryIds,
+          attachmentFileIds: attachments.map((attachment) => attachment.id),
         });
         setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай шинэчлэгдлээ!' : 'Ноорог хадгалагдлаа!');
       } else {
@@ -172,6 +191,7 @@ function WriteContent() {
           contentType,
           coverImagePath: coverImagePath || undefined,
           categoryIds: normalizedCategoryIds,
+          attachmentFileIds: attachments.map((attachment) => attachment.id),
         });
         setSuccess(status === PostStatus.PUBLISHED ? 'Нийтлэл амжилттай нийтлэгдлээ!' : 'Ноорог хадгалагдлаа!');
       }
@@ -183,6 +203,45 @@ function WriteContent() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAttachmentUpload = async (file: File) => {
+    try {
+      setError(null);
+      setIsUploadingAttachment(true);
+
+      const isDocument =
+        file.type.includes('pdf') ||
+        file.type.includes('spreadsheet') ||
+        file.type.includes('excel') ||
+        file.type.includes('word') ||
+        file.type.includes('presentation');
+
+      const uploadedFile = await filesAPI.upload(
+        file,
+        Visibility.PRIVATE,
+        isDocument ? FileKind.DOCUMENT : FileKind.OTHER
+      );
+
+      setAttachments((prev) => [
+        ...prev,
+        {
+          id: uploadedFile.id,
+          originalName: uploadedFile.originalName,
+          mimeType: uploadedFile.mimeType,
+          size: uploadedFile.size,
+        },
+      ]);
+    } catch (err) {
+      console.error('Attachment upload failed:', err);
+      setError('Файл оруулахад алдаа гарлаа.');
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((attachment) => attachment.id !== id));
   };
 
   if (!isAuthenticated || !user) {
@@ -199,6 +258,29 @@ function WriteContent() {
             <div className="mt-6">
               <Link href="/login">
                 <Button className="btn-primary">Нэвтрэх</Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!canCreatePost) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#fafafa]">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="premium-card max-w-md p-8 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-6">
+              <Lock className="h-8 w-8 text-[#e63946]" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">Нийтлэл бичих эрхгүй</h1>
+            <p className="mt-3 text-gray-600">Энэ хэсэг зөвхөн баталгаажсан гишүүдэд нээлттэй.</p>
+            <div className="mt-6">
+              <Link href="/">
+                <Button variant="outline" className="rounded-xl">Нүүр хуудас руу буцах</Button>
               </Link>
             </div>
           </div>
@@ -368,6 +450,58 @@ function WriteContent() {
                   />
                 </div>
                 <p className="mt-3 text-xs text-gray-500">Гарчигаас автоматаар үүсгэгдэнэ.</p>
+              </div>
+
+              <div className="premium-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-4">Хавсралт файл</p>
+                <label className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center hover:border-[#e63946] hover:bg-red-50/30 transition-colors cursor-pointer block">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.xls,.xlsx,.csv,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        handleAttachmentUpload(file);
+                        event.currentTarget.value = '';
+                      }
+                    }}
+                    disabled={isUploadingAttachment}
+                  />
+                  {isUploadingAttachment ? (
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-sm">Файл байршуулж байна...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Upload className="h-5 w-5" />
+                      <span className="text-sm font-medium">PDF, Excel, Word болон бусад файл оруулах</span>
+                    </div>
+                  )}
+                </label>
+
+                <div className="mt-3 space-y-2">
+                  {attachments.length === 0 ? (
+                    <p className="text-xs text-gray-500">Одоогоор хавсралт алга.</p>
+                  ) : (
+                    attachments.map((attachment) => (
+                      <div key={attachment.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <div className="min-w-0 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-500" />
+                          <p className="truncate text-sm text-gray-700">{attachment.originalName}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(attachment.id)}
+                          className="rounded-md p-1 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               {/* Visibility */}

@@ -235,6 +235,7 @@ export interface CreatePostRequest {
   coverFileId?: string;
   coverImagePath?: string | null;
   categoryIds?: string[];
+  attachmentFileIds?: string[];
 }
 
 export interface UpdatePostRequest {
@@ -249,6 +250,7 @@ export interface UpdatePostRequest {
   coverFileId?: string;
   coverImagePath?: string | null;
   categoryIds?: string[];
+  attachmentFileIds?: string[];
 }
 
 export interface PostFilters {

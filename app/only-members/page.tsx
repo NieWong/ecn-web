@@ -93,6 +93,26 @@ export default function OnlyMembersPage() {
     };
   }, [isFinanceEditor, user]);
 
+  const contributionRows = useMemo(() => {
+    const grouped = new Map<string, number>();
+
+    entries
+      .filter((entry) => entry.type === FinanceEntryType.INCOME)
+      .forEach((entry) => {
+        const contributor =
+          entry.source?.trim() ||
+          entry.createdBy?.name ||
+          entry.createdBy?.email ||
+          'Тодорхойгүй';
+
+        grouped.set(contributor, (grouped.get(contributor) || 0) + Number(entry.amount));
+      });
+
+    return Array.from(grouped.entries())
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [entries]);
+
   const loadFinance = async () => {
     try {
       setLoading(true);
@@ -316,6 +336,35 @@ export default function OnlyMembersPage() {
                   <p className="text-xs text-blue-700">Үлдэгдэл</p>
                   <p className="mt-1 text-sm font-semibold text-blue-800">{formatMNT(summary.balance)}</p>
                 </div>
+              </div>
+
+              <div className="mb-5 overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-700">Хүн</th>
+                      <th className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-700">Хандив (MNT)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={2} className="px-3 py-4 text-center text-gray-500">Уншиж байна...</td>
+                      </tr>
+                    ) : contributionRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="px-3 py-4 text-center text-gray-500">Хандивын мэдээлэл алга.</td>
+                      </tr>
+                    ) : (
+                      contributionRows.map((row) => (
+                        <tr key={row.name}>
+                          <td className="border-b border-gray-100 px-3 py-2 text-gray-900">{row.name}</td>
+                          <td className="border-b border-gray-100 px-3 py-2 font-medium text-gray-900">{formatMNT(row.amount)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               {isFinanceEditor && (
