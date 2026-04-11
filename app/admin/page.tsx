@@ -1,26 +1,87 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
-import { postsAPI, usersAPI, categoriesAPI } from '@/lib/api';
-import { Post, PostStatus, Role, User, Visibility, MembershipLevel, MembershipLevelLabels, Category } from '@/lib/types';
+import { postsAPI, usersAPI, categoriesAPI, notificationsAPI } from '@/lib/api';
+import {
+  Post,
+  PostStatus,
+  Role,
+  User,
+  Visibility,
+  MembershipLevel,
+  MembershipLevelLabels,
+  Category,
+  Notification,
+  NotificationType,
+} from '@/lib/types';
 import { ContentType, ContentTypeLabels, inferContentTypeFromPost } from '@/lib/content-type';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { formatDate, formatNumber, getPostUrl } from '@/lib/helpers';
-import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, EyeOff, XCircle, Edit, Award, FolderOpen, Trash2, Plus } from 'lucide-react';
+import { CheckCircle, RefreshCw, ShieldAlert, Users, FileText, XCircle, Edit, Award, FolderOpen, Trash2, Plus, KeyRound } from 'lucide-react';
 
-const MAX_MODERATION_LIST = 50;
 const MAX_METRICS_SAMPLE = 100;
+
+const ROLE_LABELS: Record<Role, string> = {
+  [Role.ADMIN]: 'Админ',
+  [Role.USER]: 'Хэрэглэгч',
+};
+
+type PasswordResetRequest = {
+  notificationId: string;
+  requestedByUserId: string;
+  email: string;
+  name: string | null;
+  createdAt: string;
+};
+
+const getPrivilegeSummary = (user: User) => {
+  const parts: string[] = [];
+  if (user.role === Role.ADMIN) parts.push('Системийн удирдлага');
+  if (user.isAccountant) parts.push('Санхүүгийн эрх');
+  if (parts.length === 0) return 'Стандарт эрх';
+  return parts.join(' • ');
+};
+
+const extractPasswordResetRequests = (notifications: Notification[]): PasswordResetRequest[] => {
+  const requests = notifications
+    .filter((notification) => {
+      if (notification.type !== NotificationType.SYSTEM) return false;
+      const metadata = notification.metadata as Record<string, unknown> | null;
+      return metadata?.kind === 'PASSWORD_RESET_REQUEST';
+    })
+    .map((notification) => {
+      const metadata = (notification.metadata as Record<string, unknown> | null) ?? {};
+      return {
+        notificationId: notification.id,
+        requestedByUserId: String(metadata.requestedByUserId || ''),
+        email: String(metadata.email || ''),
+        name: metadata.name ? String(metadata.name) : null,
+        createdAt: notification.createdAt,
+      };
+    })
+    .filter((request) => request.requestedByUserId && request.email)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const deduped = new Map<string, PasswordResetRequest>();
+  requests.forEach((request) => {
+    if (!deduped.has(request.requestedByUserId)) {
+      deduped.set(request.requestedByUserId, request);
+    }
+  });
+
+  return Array.from(deduped.values());
+};
 
 export default function AdminDashboardPage() {
   const { user, isLoading: authLoading } = useAuthStore();
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [pendingPosts, setPendingPosts] = useState<Post[]>([]);
-  const [moderationPosts, setModerationPosts] = useState<Post[]>([]);
+  const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>([]);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -35,7 +96,7 @@ export default function AdminDashboardPage() {
   const [rejectingPostId, setRejectingPostId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'articles' | 'approval' | 'categories'>('overview');
+  const [activeTab, setActiveTab] = useState<'users' | 'articles' | 'approval' | 'categories'>('approval');
   
   // Category management states
   const [categories, setCategories] = useState<Category[]>([]);
@@ -53,7 +114,7 @@ export default function AdminDashboardPage() {
     if (isAdmin) {
       loadDashboard();
     }
-  }, [isAdmin]);
+  }, [isAdmin, loadDashboard]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -61,9 +122,9 @@ export default function AdminDashboardPage() {
       loadDashboard(true);
     }, 10000);
     return () => clearInterval(interval);
-  }, [isAdmin]);
+  }, [isAdmin, loadDashboard]);
 
-  const loadDashboard = async (silent = false) => {
+  const loadDashboard = useCallback(async (silent = false) => {
     try {
       if (!silent) {
         setLoading(true);
@@ -75,19 +136,15 @@ export default function AdminDashboardPage() {
         users,
         activeUsers,
         postsAll,
-        postsDraft,
-        postsArchived,
-        postsPrivate,
         categoriesList,
+        notifications,
       ] = await Promise.all([
         usersAPI.listPending(),
         usersAPI.listUsers(),
         usersAPI.listUsers({ isActive: true }),
         postsAPI.list({ take: MAX_METRICS_SAMPLE, sort: 'CREATED_AT_DESC' }),
-        postsAPI.list({ status: PostStatus.DRAFT, take: MAX_MODERATION_LIST, sort: 'CREATED_AT_DESC' }),
-        postsAPI.list({ status: PostStatus.ARCHIVED, take: MAX_MODERATION_LIST, sort: 'CREATED_AT_DESC' }),
-        postsAPI.list({ visibility: Visibility.PRIVATE, take: MAX_MODERATION_LIST, sort: 'CREATED_AT_DESC' }),
         categoriesAPI.list(),
+        notificationsAPI.list({ unreadOnly: true, take: 100 }),
       ]);
 
       const pendingApprovalList = postsAll.filter((post) => !post.isApproved);
@@ -95,23 +152,12 @@ export default function AdminDashboardPage() {
         (post) => post.status === PostStatus.PUBLISHED && post.isApproved
       ).length;
 
-      const moderationMap = new Map<string, Post>();
-      [...postsDraft, ...postsArchived, ...postsPrivate].forEach((post) => {
-        moderationMap.set(post.id, post);
-      });
-
-      const moderationList = Array.from(moderationMap.values()).sort((a, b) => {
-        const aTime = new Date(a.updatedAt).getTime();
-        const bTime = new Date(b.updatedAt).getTime();
-        return bTime - aTime;
-      });
-
       setPendingUsers(pending);
       setAllUsers(users);
       setPendingPosts(pendingApprovalList);
-      setModerationPosts(moderationList);
       setAllPosts(postsAll);
       setCategories(categoriesList);
+      setPasswordResetRequests(extractPasswordResetRequests(notifications));
       setStats({
         totalUsers: users.length,
         activeUsers: activeUsers.length,
@@ -120,7 +166,7 @@ export default function AdminDashboardPage() {
         publishedPosts: publishedApprovedCount,
         pendingApprovalPosts: pendingApprovalList.length,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load admin dashboard:', err);
       setError('Failed to load admin data. Please try again.');
     } finally {
@@ -128,7 +174,7 @@ export default function AdminDashboardPage() {
         setLoading(false);
       }
     }
-  };
+  }, []);
 
   const setActionLoading = (id: string, isBusy: boolean) => {
     setActionStates((prev) => ({ ...prev, [id]: isBusy }));
@@ -165,30 +211,6 @@ export default function AdminDashboardPage() {
       await loadDashboard();
     } catch (err) {
       console.error('Publish post failed:', err);
-    } finally {
-      setActionLoading(id, false);
-    }
-  };
-
-  const handleUnpublishPost = async (id: string) => {
-    try {
-      setActionLoading(id, true);
-      await postsAPI.update(id, { status: PostStatus.DRAFT, visibility: Visibility.PRIVATE });
-      await loadDashboard();
-    } catch (err) {
-      console.error('Unpublish post failed:', err);
-    } finally {
-      setActionLoading(id, false);
-    }
-  };
-
-  const handleArchivePost = async (id: string) => {
-    try {
-      setActionLoading(id, true);
-      await postsAPI.update(id, { status: PostStatus.ARCHIVED });
-      await loadDashboard();
-    } catch (err) {
-      console.error('Archive post failed:', err);
     } finally {
       setActionLoading(id, false);
     }
@@ -265,15 +287,37 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleAllowPasswordReset = async (request: PasswordResetRequest) => {
+    try {
+      setActionLoading(request.requestedByUserId, true);
+      await usersAPI.allowPasswordReset(request.requestedByUserId);
+      if (request.notificationId) {
+        await notificationsAPI.markAsRead(request.notificationId);
+      }
+      await loadDashboard();
+    } catch (err) {
+      console.error('Allow password reset failed:', err);
+      alert('Нууц үг сэргээх хүсэлтийг зөвшөөрөхөд алдаа гарлаа');
+    } finally {
+      setActionLoading(request.requestedByUserId, false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Та энэ хэрэглэгчийг бүр мөсөн устгахдаа итгэлтэй байна уу?')) return;
     try {
       setActionLoading(userId, true);
       await usersAPI.deleteUser(userId);
       await loadDashboard();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete user failed:', err);
-      const message = err?.response?.data?.message || 'Хэрэглэгч устгахад алдаа гарлаа';
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : 'Хэрэглэгч устгахад алдаа гарлаа';
       alert(message);
     } finally {
       setActionLoading(userId, false);
@@ -431,7 +475,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen">
       <Header />
 
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+      <main className="mx-auto max-w-384 px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Админ</p>
@@ -487,7 +531,8 @@ export default function AdminDashboardPage() {
         </section>
 
         {/* Tab Navigation */}
-        <div className="mt-10 flex gap-2 border-b border-gray-200">
+        <div className="mt-10 overflow-x-auto">
+          <div className="flex min-w-max gap-2 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('approval')}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
@@ -528,6 +573,7 @@ export default function AdminDashboardPage() {
           >
             Ангилал ({categories.length})
           </button>
+          </div>
         </div>
 
         {/* Article Approval Section */}
@@ -687,18 +733,58 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Нууц үг сэргээх хүсэлт ({passwordResetRequests.length})
+              </h3>
+              <div className="rounded-xl border border-amber-200 bg-amber-50">
+                {passwordResetRequests.length === 0 ? (
+                  <div className="px-6 py-6 text-sm text-amber-900/80">Шинэ хүсэлт байхгүй байна.</div>
+                ) : (
+                  passwordResetRequests.map((request) => (
+                    <div
+                      key={request.notificationId}
+                      className="flex flex-col gap-3 border-b border-amber-100 px-6 py-4 text-sm last:border-0 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900">{request.name || request.email}</p>
+                        <p className="text-gray-600">{request.email}</p>
+                        <p className="text-xs text-gray-500">Хүсэлт: {formatDate(request.createdAt)}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={`/set-password?email=${encodeURIComponent(request.email)}`}
+                          className="inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                        >
+                          Set-password холбоос
+                        </Link>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAllowPasswordReset(request)}
+                          disabled={actionStates[request.requestedByUserId]}
+                        >
+                          <KeyRound className="h-4 w-4" />
+                          Set password зөвшөөрөх
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             {/* All Users */}
             <div className="mt-6">
               <h3 className="text-sm font-medium text-gray-700 mb-2">Бүх хэрэглэгчид</h3>
-              <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
+              <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
+                <table className="min-w-245 divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Хэрэглэгч</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Имэйл</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Гишүүнчлэл</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Санхүү засварлах</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Роль</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Эрх</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Төлөв</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Үйлдэл</th>
                     </tr>
@@ -715,12 +801,12 @@ export default function AdminDashboardPage() {
                     ) : (
                       allUsers.map((u) => (
                         <tr key={u.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 align-top">
                             <p className="font-medium text-gray-900">{u.name || 'Нэргүй'}</p>
                             <p className="text-xs text-gray-500">ID: {u.id.slice(0, 8)}</p>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{u.email}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.email}</td>
+                          <td className="px-4 py-3 align-top whitespace-nowrap">
                             {editingUserId === u.id ? (
                               <select
                                 value={u.membershipLevel}
@@ -739,7 +825,7 @@ export default function AdminDashboardPage() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 align-top whitespace-nowrap">
                             <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                               <input
                                 type="checkbox"
@@ -751,21 +837,25 @@ export default function AdminDashboardPage() {
                               <span>{u.isAccountant ? 'Идэвхтэй' : 'Идэвхгүй'}</span>
                             </label>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              u.role === Role.ADMIN ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {u.role}
-                            </span>
+                          <td className="px-4 py-3 align-top whitespace-nowrap">
+                            <div className="flex flex-col gap-1">
+                              <span className={`inline-flex w-fit rounded-full px-2 py-1 text-xs font-medium ${
+                                u.role === Role.ADMIN ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {ROLE_LABELS[u.role]}
+                              </span>
+                              <span className="text-xs text-gray-500">{getPrivilegeSummary(u)}</span>
+                              <span className="text-xs text-gray-500">{u.role}</span>
+                            </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 align-top whitespace-nowrap">
                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                               u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                             }`}>
                               {u.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 align-top">
                             <div className="flex gap-2">
                               {editingUserId === u.id ? (
                                 <Button
@@ -830,6 +920,22 @@ export default function AdminDashboardPage() {
                                     disabled={actionStates[u.id] || u.id === user?.id}
                                   >
                                     Устгах
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleAllowPasswordReset({
+                                        notificationId: '',
+                                        requestedByUserId: u.id,
+                                        email: u.email,
+                                        name: u.name,
+                                        createdAt: u.updatedAt,
+                                      })
+                                    }
+                                    disabled={actionStates[u.id]}
+                                  >
+                                    Нууц үг reset
                                   </Button>
                                 </>
                               )}

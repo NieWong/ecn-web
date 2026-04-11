@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Loader2, Mail, User as UserIcon, AlertCircle, CheckCircle, ArrowRight, Sparkles, PenSquare, BookOpen, Users } from 'lucide-react';
 
 export default function RegisterPage() {
-  const router = useRouter();
   const register = useAuthStore((state) => state.register);
 
   const [email, setEmail] = useState('');
@@ -25,10 +23,15 @@ export default function RegisterPage() {
     try {
       await register(email, name || undefined);
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      
-      if (err.response?.status === 409) {
+
+      const status =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { status?: number } }).response?.status
+          : undefined;
+
+      if (status === 409) {
         setError('Энэ имэйл хаягаар бүртгэл аль хэдийн үүссэн байна.');
       } else {
         setError('Алдаа гарлаа. Дахин оролдоно уу.');
@@ -54,8 +57,8 @@ export default function RegisterPage() {
                 Бүртгүүлсэнд баярлалаа. Таны хүсэлт админы зөвшөөрлийг хүлээж байна.
               </p>
               <p className="text-sm text-gray-600">
-                Зөвшөөрөгдсөн тохиолдолд танд мэдэгдэх болно.
-                Дараа нь нууц үгээ тохируулж нийтлэл бичиж эхлэх боломжтой.
+                Зөвшөөрөгдсөний дараа та нууц үгээ тохируулж,
+                нийтлэл бичих боломжтой болно.
               </p>
             </div>
           </div>
@@ -72,7 +75,7 @@ export default function RegisterPage() {
             </Link>
             <Link href={email.trim() ? `/set-password?email=${encodeURIComponent(email.trim())}` : '/set-password'}>
               <Button variant="outline" className="w-full rounded-xl h-12 border-gray-200">
-                Админ зөвшөөрсний дараа нууц үг тохируулах
+                Нууц үг тохируулах хуудас
               </Button>
             </Link>
           </div>

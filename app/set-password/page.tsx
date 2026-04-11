@@ -19,6 +19,30 @@ export default function SetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPrefilledEmail, setIsPrefilledEmail] = useState(false);
 
+  const mapSetPasswordError = (err: unknown) => {
+    const status =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { status?: number; data?: { message?: string } } }).response?.status
+        : undefined;
+
+    const message =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+
+    if (status === 404) return 'Бүртгэл олдсонгүй.';
+    if (status === 403) return 'Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.';
+    if (typeof message === 'string') {
+      if (message.toLowerCase().includes('password already set')) {
+        return 'Нууц үг аль хэдийн тохируулагдсан байна. Нэвтрэх хуудсаар орно уу.';
+      }
+      if (message.toLowerCase().includes('account not approved')) {
+        return 'Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.';
+      }
+    }
+    return 'Алдаа гарлаа. Дахин оролдоно уу.';
+  };
+
   useEffect(() => {
     const queryEmail = new URLSearchParams(window.location.search).get('email');
     if (queryEmail) {
@@ -49,18 +73,9 @@ export default function SetPasswordPage() {
     try {
       await setPasswordAction(email, password);
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Set password error:', err);
-      
-      if (err.response?.status === 404) {
-        setError('Бүртгэл олдсонгүй.');
-      } else if (err.response?.status === 403) {
-        setError('Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.');
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Алдаа гарлаа. Дахин оролдоно уу.');
-      }
+      setError(mapSetPasswordError(err));
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +94,7 @@ export default function SetPasswordPage() {
             Нууц үг тохируулах
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Бүртгэлээ дүүргэн бичиж эхлээрэй.
+            Бүртгэлээ идэвхжүүлж нэвтрэхийн тулд шинэ нууц үг оруулна уу.
           </p>
         </div>
 
@@ -101,7 +116,7 @@ export default function SetPasswordPage() {
                 <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div className="ml-3">
                   <p className="text-sm text-blue-800">
-                    Таны бүртгэл зөвшөөрөгдлөө! Бүртгэлээ дүүргэхийн тулд нууц үг тохируулаарай.
+                    Админ зөвшөөрсний дараа энэ хуудсаар нууц үгээ тохируулна.
                   </p>
                 </div>
               </div>

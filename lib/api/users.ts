@@ -65,4 +65,10 @@ export const usersAPI = {
     const response = await apiClient.patch<User>(`/users/${id}/accountant`, { isAccountant });
     return response.data;
   },
+
+  // Admin: Allow user to set a new password
+  allowPasswordReset: async (id: string) => {
+    const response = await apiClient.post<User>(`/users/${id}/allow-password-reset`);
+    return response.data;
+  },
 };

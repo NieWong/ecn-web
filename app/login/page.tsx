@@ -18,6 +18,29 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [forgotMessage, setForgotMessage] = useState<string | null>(null);
 
+  const getLoginErrorMessage = (err: unknown) => {
+    const status =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { status?: number; data?: { message?: string } } }).response?.status
+        : undefined;
+
+    const message =
+      typeof err === 'object' && err !== null && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+
+    if (status === 403) {
+      return 'Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.';
+    }
+    if (status === 400 && typeof message === 'string' && message.toLowerCase().includes('password')) {
+      return 'Эхлээд нууц үгээ тохируулна уу.';
+    }
+    if (status === 401) {
+      return 'Имэйл эсвэл нууц үг буруу байна.';
+    }
+    return 'Алдаа гарлаа. Дахин оролдоно уу.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -26,22 +49,21 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push('/');
-    } catch (err: any) {
-      const status = err?.response?.status;
+    } catch (err: unknown) {
+      const status =
+        typeof err === 'object' && err !== null && 'response' in err
+          ? (err as { response?: { status?: number } }).response?.status
+          : undefined;
 
       if (!status || status >= 500) {
         console.error('Login error:', err);
       }
-      
-      if (status === 403) {
-        setError('Таны бүртгэл одоогоор зөвшөөрөгдөөгүй байна. Админы зөвшөөрлийг хүлээнэ үү.');
-      } else if (status === 400 && err.response?.data?.message?.includes('password')) {
-        setError('Эхлээд нууц үгээ тохируулаарай.');
+
+      const resolvedMessage = getLoginErrorMessage(err);
+      setError(resolvedMessage);
+
+      if (status === 400 && resolvedMessage.includes('нууц үгээ')) {
         setTimeout(() => router.push('/set-password'), 2000);
-      } else if (status === 401) {
-        setError('Имэйл эсвэл нууц үг буруу байна.');
-      } else {
-        setError('Алдаа гарлаа. Дахин оролдоно уу.');
       }
     } finally {
       setIsLoading(false);
@@ -57,9 +79,9 @@ export default function LoginPage() {
     try {
       setError(null);
       const response = await forgotPassword(email.trim());
-      setForgotMessage(response.message || 'Нууц үг сэргээх хүсэлт илгээгдлээ. Админтай холбогдоно уу.');
+      setForgotMessage(response.message || 'Нууц үг сэргээх хүсэлт илгээгдлээ. Админ шалгасны дараа дахин нууц үг тохируулах боломжтой болно.');
     } catch {
-      setForgotMessage('Сэргээх хүсэлт илгээгдлээ. Админтай холбогдоно уу.');
+      setForgotMessage('Нууц үг сэргээх хүсэлт илгээгдлээ. Админ шалгасны дараа дахин нууц үг тохируулах боломжтой болно.');
     }
   };
 

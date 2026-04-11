@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -45,7 +45,42 @@ const getNotificationIcon = (type: NotificationType) => {
   }
 };
 
-const getNotificationTypeLabel = (type: NotificationType) => {
+const getNotificationSystemKind = (notification: Notification) => {
+  const metadata = notification.metadata as Record<string, unknown> | null;
+  const kind = metadata?.kind;
+  return typeof kind === 'string' ? kind : null;
+};
+
+const getNotificationAction = (notification: Notification, role: string | undefined) => {
+  const kind = getNotificationSystemKind(notification);
+
+  if (kind === 'PASSWORD_RESET_REQUEST' && role === 'ADMIN') {
+    return { href: '/admin', label: 'Админ самбар руу' };
+  }
+
+  if (kind === 'PASSWORD_RESET_APPROVED') {
+    const metadata = notification.metadata as Record<string, unknown> | null;
+    const email = typeof metadata?.email === 'string' ? metadata.email : null;
+    return {
+      href: email ? `/set-password?email=${encodeURIComponent(email)}` : '/set-password',
+      label: 'Нууц үг тохируулах',
+    };
+  }
+
+  if (notification.postId) {
+    return { href: `/article/${notification.postId}`, label: 'Нийтлэл харах →' };
+  }
+
+  return null;
+};
+
+const getNotificationTypeLabel = (notification: Notification) => {
+  const kind = getNotificationSystemKind(notification);
+
+  if (kind === 'PASSWORD_RESET_REQUEST') return 'Нууц үг reset хүсэлт';
+  if (kind === 'PASSWORD_RESET_APPROVED') return 'Нууц үг reset зөвшөөрөгдсөн';
+
+  const type = notification.type;
   switch (type) {
     case NotificationType.ARTICLE_APPROVED:
       return 'Нийтлэл баталгаажсан';
@@ -71,7 +106,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const notifs = await notificationsAPI.list({
@@ -84,13 +119,13 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
 
   useEffect(() => {
     if (user) {
-      fetchNotifications();
+      void fetchNotifications();
     }
-  }, [user, filter]);
+  }, [user, fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -233,7 +268,7 @@ export default function NotificationsPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 mb-2">
-                            {getNotificationTypeLabel(notification.type)}
+                            {getNotificationTypeLabel(notification)}
                           </span>
                           <h3 className="font-semibold text-gray-900">
                             {notification.title}
@@ -244,14 +279,18 @@ export default function NotificationsPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-gray-600">{notification.message}</p>
-                      {notification.postId && (
-                        <Link
-                          href={`/article/${notification.postId}`}
-                          className="mt-2 inline-flex text-sm text-blue-600 hover:underline"
-                        >
-                          Нийтлэл харах →
-                        </Link>
-                      )}
+                      {(() => {
+                        const action = getNotificationAction(notification, user?.role);
+                        if (!action) return null;
+                        return (
+                          <Link
+                            href={action.href}
+                            className="mt-2 inline-flex text-sm text-blue-600 hover:underline"
+                          >
+                            {action.label}
+                          </Link>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-col gap-2">
                       {!notification.isRead && (

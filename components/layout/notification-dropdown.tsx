@@ -4,9 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { notificationsAPI } from '@/lib/api';
-import { Notification, NotificationType } from '@/lib/types';
+import { Notification } from '@/lib/types';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { Button } from '@/components/ui/button';
 
 const formatRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
@@ -43,6 +42,35 @@ const formatRelativeTime = (dateString: string) => {
 //   }
 // };
 
+const getNotificationSystemKind = (notification: Notification) => {
+  const metadata = notification.metadata as Record<string, unknown> | null;
+  const kind = metadata?.kind;
+  return typeof kind === 'string' ? kind : null;
+};
+
+const getNotificationAction = (notification: Notification, role: string | undefined) => {
+  const kind = getNotificationSystemKind(notification);
+
+  if (kind === 'PASSWORD_RESET_REQUEST' && role === 'ADMIN') {
+    return { href: '/admin', label: 'Админ самбар руу' };
+  }
+
+  if (kind === 'PASSWORD_RESET_APPROVED') {
+    const metadata = notification.metadata as Record<string, unknown> | null;
+    const email = typeof metadata?.email === 'string' ? metadata.email : null;
+    return {
+      href: email ? `/set-password?email=${encodeURIComponent(email)}` : '/set-password',
+      label: 'Нууц үг тохируулах',
+    };
+  }
+
+  if (notification.postId) {
+    return { href: `/article/${notification.postId}`, label: 'Нийтлэл харах' };
+  }
+
+  return null;
+};
+
 export function NotificationDropdown() {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
@@ -53,6 +81,7 @@ export function NotificationDropdown() {
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
     try {
+      setLoading(true);
       const [notifs, count] = await Promise.all([
         notificationsAPI.list({ take: 20 }),
         notificationsAPI.getUnreadCount(),
@@ -61,6 +90,8 @@ export function NotificationDropdown() {
       setUnreadCount(count);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
@@ -75,18 +106,30 @@ export function NotificationDropdown() {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
+    if (!user) return;
+
+    const timeout = setTimeout(() => {
+      void fetchUnreadCount();
+    }, 0);
+
+    const interval = setInterval(() => {
+      void fetchUnreadCount();
+    }, 30000);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [user, fetchUnreadCount]);
 
   useEffect(() => {
-    if (isOpen && user) {
-      setLoading(true);
-      fetchNotifications().finally(() => setLoading(false));
-    }
+    if (!isOpen || !user) return;
+
+    const timeout = setTimeout(() => {
+      void fetchNotifications();
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [isOpen, user, fetchNotifications]);
 
   const handleMarkAsRead = async (id: string) => {
@@ -203,15 +246,19 @@ export function NotificationDropdown() {
                           <span className="text-xs text-gray-400">
                             {formatRelativeTime(notification.createdAt)}
                           </span>
-                          {notification.postId && (
-                            <Link
-                              href={`/article/${notification.postId}`}
-                              className="text-xs text-blue-600 hover:underline"
-                              onClick={() => setIsOpen(false)}
-                            >
-                              Нийтлэл харах
-                            </Link>
-                          )}
+                          {(() => {
+                            const action = getNotificationAction(notification, user?.role);
+                            if (!action) return null;
+                            return (
+                              <Link
+                                href={action.href}
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                {action.label}
+                              </Link>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
