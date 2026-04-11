@@ -387,7 +387,7 @@
 }
 
 .article-content.prose {
-  max-width: 100%;
+  max-width: 72ch;
 }
 
 .prose p {
