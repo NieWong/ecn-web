@@ -386,6 +386,10 @@
   line-height: 1.75;
 }
 
+.article-content.prose {
+  max-width: 100%;
+}
+
 .prose p {
   margin-top: 1.5em;
   margin-bottom: 1.5em;

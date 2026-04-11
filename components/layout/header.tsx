@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap, ChevronDown } from 'lucide-react';
+import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap, ChevronDown, Lock } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { MembershipLevel, Role } from '@/lib/types';
@@ -17,6 +17,7 @@ export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const isAdmin = user?.role === Role.ADMIN;
   const canAccessOnlyMembers = !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
+  const canCreatePosts = !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showContentMenu, setShowContentMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -86,7 +87,12 @@ export function Header() {
   const contentLinks = [
     { label: 'Нийтлэлүүд', href: '/' },
     { label: 'Мэдээ, мэдээлэл', href: '/news' },
-    { label: 'Нийтлэл бичих', href: '/write' },
+    {
+      label: 'Нийтлэл бичих',
+      href: '/write',
+      showLock: !canCreatePosts,
+      hint: !canCreatePosts ? 'Зөвхөн гишүүд нийтлэл бичнэ' : undefined,
+    },
   ];
 
   if (canAccessOnlyMembers) {
@@ -174,6 +180,12 @@ export function Header() {
                           className="flex items-center justify-between rounded-xl px-4 py-3 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
                         >
                           <span>{item.label}</span>
+                          {item.showLock && (
+                            <span className="inline-flex items-center gap-1 text-xs text-amber-300" title={item.hint}>
+                              <Lock className="h-3 w-3" />
+                              <span>Members</span>
+                            </span>
+                          )}
                         </Link>
                       ))}
                     </div>
@@ -222,9 +234,11 @@ export function Header() {
                     <Button
                       variant="ghost"
                       className="flex items-center gap-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+                      title={!canCreatePosts ? 'Зөвхөн гишүүд нийтлэл бичнэ' : undefined}
                     >
-                      <PenSquare className="h-4 w-4" />
+                      {canCreatePosts ? <PenSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                       <span>Write</span>
+                      {!canCreatePosts && <span className="text-[11px] text-amber-300">Members</span>}
                     </Button>
                   </Link>
 
@@ -384,8 +398,12 @@ export function Header() {
                         href={item.href}
                         onClick={() => setShowMobileMenu(false)}
                         className="rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                        title={item.hint}
                       >
-                        {item.label}
+                        <span className="flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {item.showLock && <Lock className="h-3.5 w-3.5 text-amber-300" />}
+                        </span>
                       </Link>
                     ))}
                   </div>

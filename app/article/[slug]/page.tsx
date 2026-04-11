@@ -180,8 +180,8 @@ export default function ArticlePage() {
         {/* ONE consistent container for alignment */}
         <article className="pb-16 pt-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            {/* Header content (narrow) */}
-            <div className="mx-auto max-w-5xl">
+            {/* Header content */}
+            <div className="w-full">
               <div className="flex flex-wrap items-center gap-2">
                 {post.visibility === 'PRIVATE' && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700">
@@ -341,8 +341,8 @@ export default function ArticlePage() {
               </div>
             )}
 
-            {/* Bottom sections (narrow, aligned same as header) */}
-            <div className="mx-auto max-w-5xl">
+            {/* Bottom sections */}
+            <div className="w-full">
               <div className="mt-12 pt-8 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">
