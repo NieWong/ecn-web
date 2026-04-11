@@ -298,7 +298,7 @@ export default function ArticlePage() {
               <div
                 className="
       article-content prose prose-lg max-w-none font-source-serif text-gray-800
-      break-words
+      break-normal
       prose-pre:max-w-full prose-pre:overflow-x-auto
       prose-table:block prose-table:max-w-full prose-table:overflow-x-auto
       prose-img:max-w-full prose-img:h-auto
