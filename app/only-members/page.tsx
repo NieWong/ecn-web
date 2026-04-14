@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { FinanceViewer } from '@/components/finance/FinanceViewer';
+import { FinanceEditor } from '@/components/finance/FinanceEditor';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { financeAPI, postsAPI, usersAPI } from '@/lib/api';
 import {
@@ -11,7 +13,6 @@ import {
   FinanceEntry,
   FinanceEntryType,
   FinanceStatus,
-  FinanceSummary,
   MembershipLevel,
   Post,
   PostStatus,
@@ -19,36 +20,14 @@ import {
   User,
   Visibility,
 } from '@/lib/types';
-import { FileText, Wallet, Lock, Trash2 } from 'lucide-react';
+import { FileText, Lock } from 'lucide-react';
 
-const typeLabels: Record<FinanceEntryType, string> = {
-  [FinanceEntryType.BUDGET]: 'Төсөв',
-  [FinanceEntryType.INCOME]: 'Орлого',
-  [FinanceEntryType.EXPENSE]: 'Зардал',
-};
 
-const statusLabels: Record<FinanceStatus, string> = {
-  [FinanceStatus.PENDING]: 'Хүлээгдэж байна',
-  [FinanceStatus.APPROVED]: 'Батлагдсан',
-  [FinanceStatus.PAID]: 'Төлөгдсөн',
-  [FinanceStatus.CANCELLED]: 'Цуцлагдсан',
-};
-
-const formatMNT = (value: number) => {
-  return new Intl.NumberFormat('mn-MN', {
-    style: 'currency',
-    currency: 'MNT',
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+type MembersTab = 'posts' | 'finance';
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const maybeError = error as { response?: { data?: { error?: string } } };
   return maybeError.response?.data?.error || fallback;
-};
-
-type FinanceFormState = Omit<CreateFinanceEntryRequest, 'amount'> & {
-  amount: string;
 };
 
 export default function OnlyMembersPage() {
@@ -59,44 +38,50 @@ export default function OnlyMembersPage() {
     !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
 
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
-  const [summary, setSummary] = useState<FinanceSummary>({
-    totalIncome: 0,
-    totalExpense: 0,
-    totalBudget: 0,
-    balance: 0,
-  });
   const [managers, setManagers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [memberPosts, setMemberPosts] = useState<Post[]>([]);
   const [postsError, setPostsError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<FinanceFormState>({
-    title: '',
-    type: FinanceEntryType.BUDGET,
-    amount: '',
-    source: '',
-    purpose: '',
-    usedBy: '',
-    status: FinanceStatus.PENDING,
-    transactionDate: new Date().toISOString().slice(0, 10),
-    managerId: null,
-    notes: '',
-  });
+  const [financeError, setFinanceError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<MembersTab>('posts');
 
-  const canManageEntry = useMemo(() => {
-    return (entry: FinanceEntry) => {
-      if (!user) return false;
-      if (isFinanceEditor) return true;
-      return entry.managerId === user.id;
+  const canManageEntry = (entry: FinanceEntry) => {
+    if (!user) return false;
+    if (isFinanceEditor) return true;
+    return entry.managerId === user.id;
+  };
+
+  const activeFinanceEntries = useMemo(
+    () => entries.filter((entry) => entry.status !== FinanceStatus.CANCELLED),
+    [entries]
+  );
+
+  const dynamicSummary = useMemo(() => {
+    const totalBudget = activeFinanceEntries
+      .filter((entry) => entry.type === FinanceEntryType.BUDGET)
+      .reduce((sum, entry) => sum + Number(entry.amount), 0);
+
+    const totalIncome = activeFinanceEntries
+      .filter((entry) => entry.type === FinanceEntryType.INCOME)
+      .reduce((sum, entry) => sum + Number(entry.amount), 0);
+
+    const totalExpense = activeFinanceEntries
+      .filter((entry) => entry.type === FinanceEntryType.EXPENSE)
+      .reduce((sum, entry) => sum + Number(entry.amount), 0);
+
+    return {
+      totalBudget,
+      totalIncome,
+      totalExpense,
+      balance: totalIncome - totalExpense,
     };
-  }, [isFinanceEditor, user]);
+  }, [activeFinanceEntries]);
 
   const contributionRows = useMemo(() => {
     const grouped = new Map<string, number>();
 
-    entries
+    activeFinanceEntries
       .filter((entry) => entry.type === FinanceEntryType.INCOME)
       .forEach((entry) => {
         const contributor =
@@ -111,21 +96,38 @@ export default function OnlyMembersPage() {
     return Array.from(grouped.entries())
       .map(([name, amount]) => ({ name, amount }))
       .sort((a, b) => b.amount - a.amount);
-  }, [entries]);
+  }, [activeFinanceEntries]);
 
   const loadFinance = async () => {
     try {
       setLoading(true);
-      const [entryData, summaryData] = await Promise.all([
-        financeAPI.list(),
-        financeAPI.summary(),
-      ]);
+      setFinanceError(null);
+      const entryData = await financeAPI.list();
       setEntries(entryData);
-      setSummary(summaryData);
     } catch (error: unknown) {
-      setError(getApiErrorMessage(error, 'Санхүүгийн мэдээлэл татахад алдаа гарлаа.'));
+      setFinanceError(getApiErrorMessage(error, 'Санхүүгийн мэдээлэл татахад алдаа гарлаа.'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateFinanceEntry = async (entry: CreateFinanceEntryRequest) => {
+    try {
+      setFinanceError(null);
+      await financeAPI.create(entry);
+      await loadFinance();
+    } catch (error: unknown) {
+      setFinanceError(getApiErrorMessage(error, 'Санхүүгийн мөр нэмэхэд алдаа гарлаа.'));
+      throw error; // Let the editor component handle UI
+    }
+  };
+
+  const handleStatusChange = async (entryId: string, status: FinanceStatus) => {
+    try {
+      await financeAPI.update(entryId, { status });
+      await loadFinance();
+    } catch (error: unknown) {
+      setFinanceError(getApiErrorMessage(error, 'Төлөв шинэчлэхэд алдаа гарлаа.'));
     }
   };
 
@@ -165,61 +167,6 @@ export default function OnlyMembersPage() {
       })
       .catch(() => setManagers([]));
   }, [isAuthenticated, isAdmin]);
-
-  const handleCreateEntry = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setSaving(true);
-      setError(null);
-
-      await financeAPI.create({
-        ...form,
-        amount: Number(form.amount.trim()),
-        managerId: form.managerId || null,
-        source: form.source || null,
-        purpose: form.purpose || null,
-        usedBy: form.usedBy || null,
-        notes: form.notes || null,
-      });
-
-      setForm({
-        title: '',
-        type: FinanceEntryType.BUDGET,
-        amount: '',
-        source: '',
-        purpose: '',
-        usedBy: '',
-        status: FinanceStatus.PENDING,
-        transactionDate: new Date().toISOString().slice(0, 10),
-        managerId: null,
-        notes: '',
-      });
-
-      await loadFinance();
-    } catch (error: unknown) {
-      setError(getApiErrorMessage(error, 'Санхүүгийн мөр нэмэхэд алдаа гарлаа.'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleStatusChange = async (entryId: string, status: FinanceStatus) => {
-    try {
-      await financeAPI.update(entryId, { status });
-      await loadFinance();
-    } catch (error: unknown) {
-      setError(getApiErrorMessage(error, 'Төлөв шинэчлэхэд алдаа гарлаа.'));
-    }
-  };
-
-  const handleDelete = async (entryId: string) => {
-    try {
-      await financeAPI.remove(entryId);
-      await loadFinance();
-    } catch (error: unknown) {
-      setError(getApiErrorMessage(error, 'Санхүүгийн мөр устгахад алдаа гарлаа.'));
-    }
-  };
 
   if (authLoading) {
     return (
@@ -272,8 +219,35 @@ export default function OnlyMembersPage() {
             <h1 className="mt-2 text-3xl font-bold text-gray-900">Only Members</h1>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <section className="premium-card p-6">
+          <div className="mb-8 flex justify-center">
+            <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setActiveTab('posts')}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeTab === 'posts'
+                    ? 'bg-brand text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Only Members Posts
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('finance')}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeTab === 'finance'
+                    ? 'bg-brand text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Finance
+              </button>
+            </div>
+          </div>
+
+          {activeTab === 'posts' && (
+            <section className="mx-auto max-w-4xl premium-card p-6">
               <div className="mb-4 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-brand" />
                 <h2 className="text-lg font-bold text-gray-900">Only Members Posts</h2>
@@ -307,229 +281,32 @@ export default function OnlyMembersPage() {
                 )}
               </div>
             </section>
+          )}
 
-            <section className="premium-card p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-brand" />
-                <h2 className="text-lg font-bold text-gray-900">Finance</h2>
-              </div>
-              {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-
-              <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                  <p className="text-xs text-gray-500">Төсөв</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">{formatMNT(summary.totalBudget)}</p>
-                </div>
-                <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2">
-                  <p className="text-xs text-green-700">Орлого</p>
-                  <p className="mt-1 text-sm font-semibold text-green-800">{formatMNT(summary.totalIncome)}</p>
-                </div>
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                  <p className="text-xs text-amber-700">Зардал</p>
-                  <p className="mt-1 text-sm font-semibold text-amber-800">{formatMNT(summary.totalExpense)}</p>
-                </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-                  <p className="text-xs text-blue-700">Үлдэгдэл</p>
-                  <p className="mt-1 text-sm font-semibold text-blue-800">{formatMNT(summary.balance)}</p>
-                </div>
-              </div>
-
-              <div className="mb-5 overflow-x-auto rounded-lg border border-gray-200">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-700">Хүн</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-700">Хандив (MNT)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={2} className="px-3 py-4 text-center text-gray-500">Уншиж байна...</td>
-                      </tr>
-                    ) : contributionRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="px-3 py-4 text-center text-gray-500">Хандивын мэдээлэл алга.</td>
-                      </tr>
-                    ) : (
-                      contributionRows.map((row) => (
-                        <tr key={row.name}>
-                          <td className="border-b border-gray-100 px-3 py-2 text-gray-900">{row.name}</td>
-                          <td className="border-b border-gray-100 px-3 py-2 font-medium text-gray-900">{formatMNT(row.amount)}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {isFinanceEditor && (
-                <form onSubmit={handleCreateEntry} className="mb-5 grid gap-2 rounded-lg border border-gray-200 p-3">
-                  <p className="text-sm font-semibold text-gray-900">Санхүүгийн мөр нэмэх</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <input
-                      value={form.title}
-                      onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="Зүйл (жишээ: Хандив)"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      required
+          {activeTab === 'finance' && (
+            <div className="mx-auto max-w-6xl">
+              <FinanceViewer
+                summary={dynamicSummary}
+                entries={entries}
+                contributionRows={contributionRows}
+                loading={loading}
+                isFinanceEditor={isFinanceEditor}
+                onStatusChange={handleStatusChange}
+                canManageEntry={canManageEntry}
+                error={financeError}
+                editor={
+                  isFinanceEditor ? (
+                    <FinanceEditor
+                      onSubmit={handleCreateFinanceEntry}
+                      managers={managers}
+                      isAdmin={isAdmin}
+                      error={financeError}
                     />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={form.amount}
-                      onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
-                      placeholder="Дүн"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      required
-                    />
-                    <select
-                      value={form.type}
-                      onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value as FinanceEntryType }))}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    >
-                      {Object.values(FinanceEntryType).map((value) => (
-                        <option key={value} value={value}>{typeLabels[value]}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={form.status}
-                      onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as FinanceStatus }))}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    >
-                      {Object.values(FinanceStatus).map((value) => (
-                        <option key={value} value={value}>{statusLabels[value]}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="date"
-                      value={form.transactionDate}
-                      onChange={(e) => setForm((prev) => ({ ...prev, transactionDate: e.target.value }))}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      required
-                    />
-                    {isAdmin && (
-                      <select
-                        value={form.managerId || ''}
-                        onChange={(e) => setForm((prev) => ({ ...prev, managerId: e.target.value || null }))}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      >
-                        <option value="">Менежер сонгоогүй</option>
-                        {managers.map((manager) => (
-                          <option key={manager.id} value={manager.id}>
-                            {manager.name || manager.email}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <input
-                      value={form.source || ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, source: e.target.value }))}
-                      placeholder="Орлого хаанаас"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <input
-                      value={form.purpose || ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, purpose: e.target.value }))}
-                      placeholder="Юунд зарцуулах"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <input
-                      value={form.usedBy || ''}
-                      onChange={(e) => setForm((prev) => ({ ...prev, usedBy: e.target.value }))}
-                      placeholder="Хэн ашигласан"
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-fit rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-                  >
-                    {saving ? 'Хадгалж байна...' : 'Нэмэх'}
-                  </button>
-                </form>
-              )}
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Зүйл</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Төрөл</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Дүн</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Эх үүсвэр / зориулалт</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Хариуцагч</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Төлөв</th>
-                      <th className="border-b border-gray-200 px-3 py-2 text-left">Үйлдэл</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={7} className="px-3 py-4 text-center text-gray-500">Уншиж байна...</td>
-                      </tr>
-                    ) : entries.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-3 py-4 text-center text-gray-500">Одоогоор санхүүгийн мэдээлэл алга.</td>
-                      </tr>
-                    ) : (
-                      entries.map((entry) => (
-                        <tr key={entry.id}>
-                          <td className="border-b border-gray-100 px-3 py-2">
-                            <div className="font-medium text-gray-900">{entry.title}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(entry.transactionDate).toLocaleDateString('mn-MN')}
-                            </div>
-                          </td>
-                          <td className="border-b border-gray-100 px-3 py-2">{typeLabels[entry.type]}</td>
-                          <td className="border-b border-gray-100 px-3 py-2">{formatMNT(Number(entry.amount))}</td>
-                          <td className="border-b border-gray-100 px-3 py-2">
-                            <div>{entry.source || '-'}</div>
-                            <div className="text-xs text-gray-500">{entry.purpose || '-'}</div>
-                            <div className="text-xs text-gray-500">Ашигласан: {entry.usedBy || '-'}</div>
-                          </td>
-                          <td className="border-b border-gray-100 px-3 py-2">{entry.manager?.name || entry.manager?.email || '-'}</td>
-                          <td className="border-b border-gray-100 px-3 py-2">
-                            {canManageEntry(entry) ? (
-                              <select
-                                value={entry.status}
-                                onChange={(e) => handleStatusChange(entry.id, e.target.value as FinanceStatus)}
-                                className="rounded-md border border-gray-300 px-2 py-1 text-xs"
-                              >
-                                {Object.values(FinanceStatus).map((value) => (
-                                  <option key={value} value={value}>{statusLabels[value]}</option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span>{statusLabels[entry.status]}</span>
-                            )}
-                          </td>
-                          <td className="border-b border-gray-100 px-3 py-2">
-                            {canManageEntry(entry) ? (
-                              <button
-                                onClick={() => handleDelete(entry.id)}
-                                className="rounded-md p-1 text-gray-500 hover:bg-red-50 hover:text-red-600"
-                                title="Устгах"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            ) : (
-                              <span className="text-xs text-gray-400">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
+                  ) : undefined
+                }
+              />
+            </div>
+          )}
         </div>
       </main>
       <Footer />
