@@ -2,25 +2,43 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArticleCard } from '@/components/articles/article-card';
 import { TopStories } from '@/components/articles/top-stories';
 import { TrendingSidebar } from '@/components/articles/trending-sidebar';
 import { postsAPI, categoriesAPI } from '@/lib/api';
-import { Post, Category, PostStatus } from '@/lib/types';
+import { Post, Category, Role, PostFilters, PostStatus, Visibility } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
 import { calculateReadTime, formatDate, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function Home() {
+  const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isAdmin = user?.role === Role.ADMIN;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSelectedCategory(new URLSearchParams(window.location.search).get('category'));
+    }
+
+    const handlePopState = () => {
+      setSelectedCategory(new URLSearchParams(window.location.search).get('category'));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     loadCategories();
@@ -45,12 +63,21 @@ export default function Home() {
       setIsLoading(true);
       setError(null);
 
-      const data = await postsAPI.list({
-        status: PostStatus.PUBLISHED,
-        categoryId: selectedCategory || undefined,
-        sort: 'PUBLISHED_AT_DESC',
-        take: 20,
-      });
+      const query: PostFilters = {
+        sort: isAdmin ? 'CREATED_AT_DESC' : 'PUBLISHED_AT_DESC',
+        take: 50,
+      };
+
+      if (selectedCategory) {
+        query.categoryId = selectedCategory;
+      }
+
+      if (!isAuthenticated) {
+        query.status = PostStatus.PUBLISHED;
+        query.visibility = Visibility.PUBLIC;
+      }
+
+      const data = await postsAPI.list(query);
 
       setPosts(data);
     } catch (err: any) {
@@ -71,8 +98,21 @@ export default function Home() {
   const featuredPost = posts[0];
   const secondaryFeatured = posts.slice(1, 3);
   const topStories = posts.slice(0, 5);
-  const streamPosts = posts.length > 3 ? posts.slice(3) : posts;
+  const streamPosts = posts;
   const sidebarLatestPosts = posts.length > 5 ? posts.slice(5, 9) : posts.slice(0, 4);
+
+  const handleCategoryChange = (categoryId: string | null) => {
+    setSelectedCategory(categoryId);
+    const params = new URLSearchParams(window.location.search);
+    if (categoryId) params.set('category', categoryId);
+    else params.delete('category');
+    const nextUrl = params.toString() ? `/?${params.toString()}` : '/';
+    router.replace(nextUrl, { scroll: false });
+  };
+
+  const activeCategoryName = selectedCategory
+    ? categories.find((category) => category.id === selectedCategory)?.name
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
@@ -84,7 +124,7 @@ export default function Home() {
             <div className="flex items-center gap-3 overflow-x-auto pb-1">
               <button
                 type="button"
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => handleCategoryChange(null)}
                 className={`category-pill whitespace-nowrap ${selectedCategory === null ? 'active' : ''}`}
               >
                 Бүгд
@@ -93,7 +133,7 @@ export default function Home() {
                 <button
                   key={category.id}
                   type="button"
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                   className={`category-pill whitespace-nowrap ${selectedCategory === category.id ? 'active' : ''}`}
                 >
                   {category.name}
@@ -241,8 +281,13 @@ export default function Home() {
               <div className="lg:col-span-2">
                 <div className="section-header">
                   <Clock className="h-4 w-4" />
-                  <h2>Шинэ нийтлэлүүд</h2>
+                  <h2>{activeCategoryName ? `${activeCategoryName} нийтлэлүүд` : 'Бүх нийтлэл'}</h2>
                 </div>
+                <p className="mb-4 text-sm text-gray-500">
+                  {isAuthenticated
+                    ? 'Таны эрхийн түвшинд харагдах бүх нийтлэлийг энд харуулж байна.'
+                    : 'Нэвтрээгүй хэрэглэгчид зөвхөн нийтэд нээлттэй нийтлэлүүдийг харна.'}
+                </p>
                 <div className="space-y-6">
                   {streamPosts.map((post) => (
                     <ArticleCard key={post.id} post={post} />
