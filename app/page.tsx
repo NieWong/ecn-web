@@ -8,12 +8,14 @@ import { ArticleCard } from '@/components/articles/article-card';
 import { TopStories } from '@/components/articles/top-stories';
 import { TrendingSidebar } from '@/components/articles/trending-sidebar';
 import { postsAPI, categoriesAPI } from '@/lib/api';
-import { Post, Category, PostStatus, Visibility } from '@/lib/types';
+import { Post, Category, PostStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
 import { calculateReadTime, formatDate, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function Home() {
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -22,8 +24,12 @@ export default function Home() {
 
   useEffect(() => {
     loadCategories();
+  }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
     loadPosts();
-  }, [selectedCategory]);
+  }, [selectedCategory, isAuthenticated, authLoading]);
 
   const loadCategories = async () => {
     try {
@@ -41,7 +47,6 @@ export default function Home() {
 
       const data = await postsAPI.list({
         status: PostStatus.PUBLISHED,
-        visibility: Visibility.PUBLIC,
         categoryId: selectedCategory || undefined,
         sort: 'PUBLISHED_AT_DESC',
         take: 20,
