@@ -115,7 +115,7 @@ export default function ArticlePage() {
         <Header />
         <main className="flex-1 flex items-center justify-center py-16">
           <div className="text-center">
-            <Loader2 className="h-10 w-10 animate-spin text-[#e63946] mx-auto" />
+            <Loader2 className="h-10 w-10 animate-spin text-brand mx-auto" />
             <p className="mt-4 text-sm text-gray-500">Нийтлэл ачаалж байна...</p>
           </div>
         </main>
@@ -131,7 +131,7 @@ export default function ArticlePage() {
         <main className="flex-1 flex items-center justify-center py-16 px-4">
           <div className="premium-card max-w-md p-8 text-center">
             <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-6">
-              <Lock className="h-8 w-8 text-[#e63946]" />
+              <Lock className="h-8 w-8 text-brand" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
               {error || 'Нийтлэл олдсонгүй'}
@@ -165,13 +165,13 @@ export default function ArticlePage() {
         {(post.coverImagePath || post.coverFile) && (
           <section className="relative">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
-              <div className="relative aspect-[21/9] overflow-hidden rounded-2xl bg-gray-100">
+              <div className="relative aspect-21/9 overflow-hidden rounded-2xl bg-gray-100">
                 <img
                   src={getCoverImageUrl(post.coverImagePath, post.coverFile)}
                   alt={post.title}
                   className="h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
               </div>
             </div>
           </section>
@@ -213,7 +213,7 @@ export default function ArticlePage() {
               {post.author && (
                 <div className="mt-8 flex items-center justify-between gap-4 py-6 border-y border-gray-200">
                   <div className="flex items-center gap-4">
-                    <Link href={`/profile/${post.author.id}`} className="flex-shrink-0">
+                    <Link href={`/profile/${post.author.id}`} className="shrink-0">
                       {post.author.profilePicturePath || post.author.profilePicture ? (
                         <img
                           src={getProfileImageUrl(
@@ -224,7 +224,7 @@ export default function ArticlePage() {
                           className="h-12 w-12 rounded-full object-cover ring-2 ring-white"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#e63946] to-[#ff6b6b] text-white text-base font-semibold ring-2 ring-white">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-brand to-[#ff6b6b] text-white text-base font-semibold ring-2 ring-white">
                           {post.author.name?.[0]?.toUpperCase() ||
                             post.author.email?.[0]?.toUpperCase()}
                         </div>
@@ -234,7 +234,7 @@ export default function ArticlePage() {
                     <div>
                       <Link
                         href={`/profile/${post.author.id}`}
-                        className="text-base font-semibold text-gray-900 hover:text-[#e63946] transition-colors"
+                        className="text-base font-semibold text-gray-900 hover:text-brand transition-colors"
                       >
                         {post.author.name || 'Anonymous'}
                       </Link>
@@ -253,14 +253,14 @@ export default function ArticlePage() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-[#e63946] hover:text-white transition-colors"
+                      className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
                       title="Хуваалцах"
                       type="button"
                     >
                       <Share2 className="h-4 w-4" />
                     </button>
                     <button
-                      className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-[#e63946] hover:text-white transition-colors"
+                      className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
                       title="Хадгалах"
                       type="button"
                     >
@@ -271,7 +271,7 @@ export default function ArticlePage() {
                       <>
                         <Link href={`/write?edit=${post.id}`}>
                           <button
-                            className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-[#e63946] hover:text-white transition-colors"
+                            className="p-2.5 rounded-full bg-gray-100 text-gray-600 hover:bg-brand hover:text-white transition-colors"
                             title="Засах"
                             type="button"
                           >
@@ -325,7 +325,7 @@ export default function ArticlePage() {
                           type="button"
                           onClick={() => handleDownloadAttachment(postImage.file.id, postImage.file.originalName)}
                           disabled={downloadingFileId === postImage.file.id}
-                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-[#e63946] hover:text-[#e63946] disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-brand hover:text-brand disabled:opacity-50"
                         >
                           {downloadingFileId === postImage.file.id ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -411,7 +411,7 @@ export default function ArticlePage() {
               {post.author && (
                 <div className="mt-10 premium-card p-6">
                   <div className="flex items-start gap-4">
-                    <Link href={`/profile/${post.author.id}`} className="flex-shrink-0">
+                    <Link href={`/profile/${post.author.id}`} className="shrink-0">
                       {post.author.profilePicturePath || post.author.profilePicture ? (
                         <img
                           src={getProfileImageUrl(
@@ -422,7 +422,7 @@ export default function ArticlePage() {
                           className="h-16 w-16 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#e63946] to-[#ff6b6b] text-white text-xl font-semibold">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-brand to-[#ff6b6b] text-white text-xl font-semibold">
                           {post.author.name?.[0]?.toUpperCase() ||
                             post.author.email?.[0]?.toUpperCase()}
                         </div>
@@ -435,7 +435,7 @@ export default function ArticlePage() {
                       </p>
                       <Link
                         href={`/profile/${post.author.id}`}
-                        className="text-lg font-bold text-gray-900 hover:text-[#e63946] transition-colors"
+                        className="text-lg font-bold text-gray-900 hover:text-brand transition-colors"
                       >
                         {post.author.name || 'Нэргүй'}
                       </Link>

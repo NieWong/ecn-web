@@ -92,7 +92,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#e63946]/20 via-transparent to-[#f472b6]/10" />
+        <div className="absolute inset-0 bg-linear-to-br from-brand/20 via-transparent to-[#f472b6]/10" />
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
@@ -106,7 +106,7 @@ export default function LoginPage() {
           
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/80">
-              <Sparkles className="h-4 w-4 text-[#e63946]" />
+              <Sparkles className="h-4 w-4 text-brand" />
               <span>Эдийн засагчдын клуб</span>
             </div>
             <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
@@ -163,15 +163,15 @@ export default function LoginPage() {
                 <h3 className="font-semibold text-gray-900">Дараагийн алхамууд:</h3>
                 <ol className="space-y-3 text-sm text-gray-700">
                   <li className="flex gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">1</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold shrink-0">1</span>
                     <span>Админ таны хүсэлтийг шалгач баталгаажуулна</span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">2</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold shrink-0">2</span>
                     <span>Зөвшөөрлийн мэдэгдэл авах болно</span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold flex-shrink-0">3</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-white text-xs font-semibold shrink-0">3</span>
                     <span>Нууц үг шинэчлэх хуудсыг нээж шинэ нууц үг тохируулна</span>
                   </li>
                 </ol>
@@ -200,7 +200,7 @@ export default function LoginPage() {
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               </div>
@@ -284,7 +284,7 @@ export default function LoginPage() {
             <div className="space-y-3 text-center text-sm">
               <p>
                 <span className="text-gray-600">Бүртгэлгүй юу? </span>
-                <Link href="/register" className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors">
+                <Link href="/register" className="font-semibold text-brand hover:text-brand-dark transition-colors">
                   Бүртгүүлэх
                 </Link>
               </p>
@@ -292,7 +292,7 @@ export default function LoginPage() {
                 <span className="text-gray-600">Шинэ хэрэглэгч үү? </span>
                 <Link
                   href={email.trim() ? `/set-password?email=${encodeURIComponent(email.trim())}` : '/set-password'}
-                  className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors"
+                  className="font-semibold text-brand hover:text-brand-dark transition-colors"
                 >
                   Нууц үг тохируулах
                 </Link>

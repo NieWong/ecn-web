@@ -43,7 +43,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-linear-to-br from-gray-50 to-white">
         <div className="w-full max-w-md space-y-8 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-green-100">
             <CheckCircle className="h-10 w-10 text-green-600" />
@@ -88,7 +88,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0a0a0a] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#e63946]/20 via-transparent to-[#f472b6]/10" />
+        <div className="absolute inset-0 bg-linear-to-br from-brand/20 via-transparent to-[#f472b6]/10" />
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03]" />
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
@@ -127,7 +127,7 @@ export default function RegisterPage() {
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-[#e63946] to-[#ff6b6b] ring-2 ring-[#0a0a0a]"
+                  className="w-10 h-10 rounded-full bg-linear-to-br from-brand to-[#ff6b6b] ring-2 ring-[#0a0a0a]"
                 />
               ))}
             </div>
@@ -149,7 +149,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#e63946]/10 px-3 py-1.5 text-xs font-semibold text-[#e63946] mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand mb-4">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Гишүүнчлэл</span>
             </div>
@@ -162,7 +162,7 @@ export default function RegisterPage() {
             {error && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-4">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function RegisterPage() {
             <div className="space-y-3 text-center text-sm">
               <p>
                 <span className="text-gray-600">Бүртгэлтэй юу? </span>
-                <Link href="/login" className="font-semibold text-[#e63946] hover:text-[#c1121f] transition-colors">
+                <Link href="/login" className="font-semibold text-brand hover:text-brand-dark transition-colors">
                   Нэвтрэх
                 </Link>
               </p>
@@ -254,11 +254,11 @@ export default function RegisterPage() {
 
             <p className="text-center text-xs text-gray-500">
               Бүртгүүлснээр та манай{' '}
-              <Link href="/terms" className="text-gray-700 hover:text-[#e63946] transition-colors">
+              <Link href="/terms" className="text-gray-700 hover:text-brand transition-colors">
                 Үйлчилгээний нөхцөл
               </Link>{' '}
               болон{' '}
-              <Link href="/privacy" className="text-gray-700 hover:text-[#e63946] transition-colors">
+              <Link href="/privacy" className="text-gray-700 hover:text-brand transition-colors">
                 Нууцлалын бодлого
               </Link>
               -той зөвшөөрч байна

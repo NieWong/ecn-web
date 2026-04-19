@@ -160,19 +160,19 @@ export default function AboutPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] py-24 overflow-hidden">
+        <section className="relative bg-linear-to-b from-[#0a0a0a] to-surface-elevated py-24 overflow-hidden">
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#e63946]/20 blur-[120px] rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-100 bg-brand/20 blur-[120px] rounded-full" />
           
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
-              <Award className="h-4 w-4 text-[#e63946]" />
+              <Award className="h-4 w-4 text-brand" />
               <span className="text-sm font-medium text-white">СЭЗИС-ийн дэргэдэх клуб</span>
             </div>
             
             <h1 className="fade-up text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
               Эдийн засагчдын клубт{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#e63946] to-[#ff6b6b]">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-brand to-[#ff6b6b]">
                 тавтай морил
               </span>
             </h1>
@@ -188,7 +188,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {stats.map((stat) => (
               <div key={stat.label} className="premium-card p-6 text-center">
-                <p className="text-3xl sm:text-4xl font-bold text-[#e63946]">{stat.value}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-brand">{stat.value}</p>
                 <p className="mt-2 text-sm text-gray-600">{stat.label}</p>
               </div>
             ))}
@@ -199,7 +199,7 @@ export default function AboutPage() {
         <section className="py-20">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#e63946] mb-2">Бидний тухай</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand mb-2">Бидний тухай</p>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 СЭЗИС-ийн дэргэдэх Эдийн засагчдын клуб
               </h2>

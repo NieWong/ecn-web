@@ -188,11 +188,11 @@ export function NotificationDropdown() {
         <>
           {/* Backdrop - z-[60] to be above header (z-50) */}
           <div
-            className="fixed inset-0 z-[60]"
+            className="fixed inset-0 z-60"
             onClick={() => setIsOpen(false)}
           />
           
-          <div className="absolute right-0 top-full mt-2 w-96 max-h-[32rem] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg z-[70]">
+          <div className="absolute right-0 top-full mt-2 w-96 max-h-128 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg z-70">
             <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
               <h3 className="font-semibold text-gray-900">Мэдэгдэл</h3>
               <div className="flex items-center gap-2">
