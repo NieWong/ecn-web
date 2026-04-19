@@ -24,7 +24,7 @@ export function MemberInfoModal({ open, onClose }: MemberInfoModalProps) {
 
         <h3 className="text-xl font-bold text-gray-900">Гишүүн элсэлт</h3>
         <p className="mt-4 text-sm leading-relaxed text-gray-700">
-          The Economics Club under the University of Finance and Economics accepts new members through a unified recruitment process conducted in both the fall and spring semesters of each academic year. You can register during this recruitment period to become a member. Membership is only available to students enrolled in the undergraduate economics program.
+          СЭЗИС-ийн дэргэдэх Эдийн засагчдын клуб нь хичээлийн жилийн намар, хаврын улиралд нэгдсэн элсэлтийн журмаар шинэ гишүүдээ авдаг. Та тухайн элсэлтийн хугацаанд бүртгүүлснээр клубийн гишүүн болох боломжтой. Гишүүнчлэл нь эдийн засгийн бакалаврын хөтөлбөрийн оюутнуудад нээлттэй.
         </p>
       </div>
     </div>

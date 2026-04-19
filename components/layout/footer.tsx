@@ -1,26 +1,24 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Facebook, Twitter, Mail, Youtube, Instagram, ArrowUpRight, MapPin, Phone, X } from 'lucide-react';
+import { categoriesAPI } from '@/lib/api';
+import { Category } from '@/lib/types';
 
 export function Footer() {
   const currentYear = new Date().getUTCFullYear();
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const footerLinks = {
-    explore: [
-      { label: 'Нийтлэлүүд', href: '/' },
-      { label: 'Мэдээ, мэдээлэл', href: '/news' },
-      { label: 'Around Numbers', href: '/search?q=Around Numbers' },
-      { label: 'Highlighting Theory', href: '/search?q=Highlighting Theory' },
-      { label: 'ECN NEWS', href: '/search?q=ECN NEWS' },
-    ],
-    company: [
-      { label: 'Бидний тухай', href: '/about' },
-      { label: 'Гишүүд', href: '/members' },
-      { label: 'Only Members', href: '/only-members' },
-      { label: 'Гишүүн болох', href: '/register' },
-    ],
-  };
+  useEffect(() => {
+    categoriesAPI.list().then(setCategories).catch(() => setCategories([]));
+  }, []);
+  const companyLinks = [
+    { label: 'Бидний тухай', href: '/about' },
+    { label: 'Гишүүд', href: '/members' },
+    { label: 'Дотоод булан', href: '/only-members' },
+    { label: 'Гишүүн болох', href: '/register' },
+  ];
 
   const socialLinks = [
     { icon: Facebook, href: 'https://www.facebook.com/CLUBofUFE?mibextid=wwXIfr&mibextid=wwXIfr', label: 'Facebook' },
@@ -43,7 +41,6 @@ export function Footer() {
                 <span className="text-2xl font-light tracking-tight text-white/60">.Club</span>
               </div>
             </Link>
-            <img src="/club_logo.png" alt="ECN Club" className="mt-4 h-6 w-auto object-contain" />
             <p className="mt-6 text-sm text-white/50 max-w-xs leading-relaxed">
               СЭЗИС-ийн дэргэдэх Эдийн засагчдын клуб. 
               Монгол оюунаар дэлхийг тэтгэнэ.
@@ -69,16 +66,25 @@ export function Footer() {
             <div className="grid gap-8 sm:grid-cols-3">
               <div>
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-white/40">
-                  Нийтлэлүүд
+                  Ангилал
                 </h4>
                 <ul className="mt-4 space-y-3">
-                  {footerLinks.explore.map((link) => (
-                    <li key={link.label}>
+                  <li>
+                    <Link 
+                      href="/" 
+                      className="group flex items-center text-sm text-white/70 hover:text-white transition-colors"
+                    >
+                      Бүх нийтлэл
+                      <ArrowUpRight className="ml-1 h-3 w-3 opacity-0 transition-all group-hover:opacity-100" />
+                    </Link>
+                  </li>
+                  {categories.slice(0, 6).map((category) => (
+                    <li key={category.id}>
                       <Link 
-                        href={link.href} 
+                        href={`/?category=${category.id}`} 
                         className="group flex items-center text-sm text-white/70 hover:text-white transition-colors"
                       >
-                        {link.label}
+                        {category.name}
                         <ArrowUpRight className="ml-1 h-3 w-3 opacity-0 transition-all group-hover:opacity-100" />
                       </Link>
                     </li>
@@ -91,7 +97,7 @@ export function Footer() {
                   Клуб
                 </h4>
                 <ul className="mt-4 space-y-3">
-                  {footerLinks.company.map((link) => (
+                  {companyLinks.map((link) => (
                     <li key={link.label}>
                       <Link 
                         href={link.href} 

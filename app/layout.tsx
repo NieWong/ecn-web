@@ -15,12 +15,12 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "ECN News - Share Your Stories",
-  description: "A platform for sharing stories, ideas, and insights. Join our community of writers and readers.",
+  title: "ECN Club",
+  description: "Эдийн засагчдын клубийн контент, гишүүд, дотоод булан.",
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: '/club_logo.png',
+    shortcut: '/club_logo.png',
+    apple: '/club_logo.png',
   },
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="mn">
       <body className={`${manrope.variable} ${sourceSerif.variable} antialiased font-sans`}>
         <AuthProvider>
           {children}

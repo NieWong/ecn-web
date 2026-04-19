@@ -9,10 +9,9 @@ import { TopStories } from '@/components/articles/top-stories';
 import { TrendingSidebar } from '@/components/articles/trending-sidebar';
 import { postsAPI, categoriesAPI } from '@/lib/api';
 import { Post, Category, PostStatus, Visibility } from '@/lib/types';
-import { inferContentTypeFromPost, ContentType, isNewsCategory } from '@/lib/content-type';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, TrendingUp, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
-import { calculateReadTime, formatDate, getImageUrl, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
+import { ArrowRight, Loader2, Sparkles, Clock, Zap } from 'lucide-react';
+import { calculateReadTime, formatDate, getCoverImageUrl, getProfileImageUrl, getPostUrl } from '@/lib/helpers';
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -29,7 +28,7 @@ export default function Home() {
   const loadCategories = async () => {
     try {
       const data = await categoriesAPI.list();
-      setCategories(data.filter((category) => !isNewsCategory(category)));
+      setCategories(data);
     } catch (err) {
       console.error('Failed to load categories:', err);
     }
@@ -48,7 +47,7 @@ export default function Home() {
         take: 20,
       });
 
-      setPosts(data.filter((post) => inferContentTypeFromPost(post) === ContentType.CONTENT));
+      setPosts(data);
     } catch (err: any) {
       console.error('Failed to load posts:', err);
 
@@ -73,6 +72,32 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fafafa]">
       <Header />
+
+      {categories.length > 0 && (
+        <section className="border-b border-gray-100 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center gap-3 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className={`category-pill whitespace-nowrap ${selectedCategory === null ? 'active' : ''}`}
+              >
+                Бүгд
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`category-pill whitespace-nowrap ${selectedCategory === category.id ? 'active' : ''}`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {!isLoading && !error && posts.length > 0 && (
         <section className="border-b border-gray-100">
@@ -213,7 +238,7 @@ export default function Home() {
                   <Clock className="h-4 w-4" />
                   <h2>Шинэ нийтлэлүүд</h2>
                 </div>
-                <div className="space-y-0">
+                <div className="space-y-6">
                   {streamPosts.map((post) => (
                     <ArticleCard key={post.id} post={post} />
                   ))}

@@ -93,9 +93,7 @@ export default function RegisterPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-12 w-16 items-center justify-center rounded-2xl bg-brand p-1 transition-transform group-hover:scale-105 overflow-hidden">
-              <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-xl object-cover" />
-            </div>
+            <img src="/club_logo.png" alt="ECN Club" className="h-12 w-auto object-contain transition-transform group-hover:scale-105" />
             <div>
               <span className="text-2xl font-bold tracking-tight text-white">ECN</span>
               <span className="text-2xl font-light tracking-tight text-white/60">.Club</span>
@@ -146,9 +144,7 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-10 w-13 items-center justify-center rounded-xl bg-brand p-1 overflow-hidden">
-                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
-              </div>
+              <img src="/club_logo.png" alt="ECN Club" className="h-10 w-auto object-contain" />
             </Link>
           </div>
 
@@ -156,7 +152,7 @@ export default function RegisterPage() {
             <div className="inline-flex items-center gap-2 rounded-full bg-[#e63946]/10 px-3 py-1.5 text-xs font-semibold text-[#e63946] mb-4">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Гишүүнчлэл</span>
-            </div
+            </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">
               Бүртгүүлэх
             </h2>
@@ -215,7 +211,7 @@ export default function RegisterPage() {
 
             <div className="rounded-xl bg-blue-50 border border-blue-100 p-4">
               <p className="text-xs text-blue-800">
-                <strong>Анхаар:</strong> Таны бүртгэлийг админ хянах болно. 
+                <strong>Анхаар:</strong> Таны бүртгэлийг админ хянах болно.
                 Зөвшөөрөгдсөний дараа нууц үгээ тохируулах боломжтой.
               </p>
             </div>
@@ -265,7 +261,7 @@ export default function RegisterPage() {
               <Link href="/privacy" className="text-gray-700 hover:text-[#e63946] transition-colors">
                 Нууцлалын бодлого
               </Link>
-              -тай зөвшөөрч байна
+              -той зөвшөөрч байна
             </p>
           </form>
         </div>

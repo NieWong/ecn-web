@@ -216,7 +216,7 @@ export default function OnlyMembersPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-brand">Private Area</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-900">Only Members</h1>
+            <h1 className="mt-2 text-3xl font-bold text-gray-900">Дотоод булан</h1>
           </div>
 
           <div className="mb-8 flex justify-center">

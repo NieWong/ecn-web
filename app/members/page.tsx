@@ -7,22 +7,21 @@ import { Footer } from '@/components/layout/footer';
 import { usersAPI } from '@/lib/api';
 import { MembershipLevel, MembershipLevelLabels, PublicProfile, Role } from '@/lib/types';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
-import { Loader2, Users, Globe, Twitter, Linkedin, ArrowUpRight } from 'lucide-react';
+import { Loader2, Users, Facebook, Instagram, Linkedin, ArrowUpRight } from 'lucide-react';
 
 const membershipPriority: MembershipLevel[] = [
-  MembershipLevel.HONORARY_MEMBER,
-  MembershipLevel.BOARD_MEMBER,
-  MembershipLevel.ADMIN_MEMBER,
   MembershipLevel.MEMBER,
-  MembershipLevel.REGULAR_USER,
+  MembershipLevel.ADMIN_MEMBER,
+  MembershipLevel.BOARD_MEMBER,
+  MembershipLevel.HONORARY_MEMBER,
 ];
 
 const sectionTitles: Record<MembershipLevel, string> = {
-  [MembershipLevel.HONORARY_MEMBER]: 'Хүндэт гишүүд',
+  [MembershipLevel.MEMBER]: 'Үндсэн гишүүд',
+  [MembershipLevel.ADMIN_MEMBER]: 'Үндсэн гишүүд',
   [MembershipLevel.BOARD_MEMBER]: 'Удирдах зөвлөл',
-  [MembershipLevel.ADMIN_MEMBER]: 'Админ гишүүд',
-  [MembershipLevel.MEMBER]: 'Гишүүд',
-  [MembershipLevel.REGULAR_USER]: 'Энгийн хэрэглэгчид',
+  [MembershipLevel.HONORARY_MEMBER]: 'Хүндэт гишүүд',
+  [MembershipLevel.REGULAR_USER]: 'Үндсэн гишүүд',
 };
 
 export default function MembersPage() {
@@ -39,8 +38,8 @@ export default function MembersPage() {
       setIsLoading(true);
       const data = await usersAPI.listPublicProfiles();
       const filteredMembers = data.filter((member) => {
-        if (!member.name) return true;
-        return member.name.trim().toLowerCase() !== 'admin';
+        if (!member.name) return false;
+        return member.name.trim().toLowerCase() !== 'admin' && member.membershipLevel !== MembershipLevel.REGULAR_USER;
       });
       setMembers(filteredMembers);
     } catch (err) {
@@ -148,7 +147,7 @@ function MemberCard({ member }: { member: PublicProfile }) {
   const membershipLabel = member.membershipLevel
     ? MembershipLevelLabels[member.membershipLevel]
     : 'Гишүүн';
-  const roleLabel = member.role === Role.ADMIN ? 'Админ' : 'Хэрэглэгч';
+  const roleLabel = member.role === Role.ADMIN ? 'Админ' : null;
 
   return (
     <Link href={`/profile/${member.id}`} className="group">
@@ -177,7 +176,7 @@ function MemberCard({ member }: { member: PublicProfile }) {
         </h3>
 
         <p className="mt-1 text-center text-sm font-medium text-gray-700">
-          {membershipLabel} · {roleLabel}
+          {membershipLabel}{roleLabel ? ` · ${roleLabel}` : ''}
         </p>
 
         {/* About */}
@@ -188,22 +187,22 @@ function MemberCard({ member }: { member: PublicProfile }) {
         )}
 
         {/* Social Links */}
-        {(member.website || member.twitter || member.linkedin) && (
+        {(member.facebook || member.twitter || member.linkedin) && (
           <div className="mt-4 flex items-center justify-center gap-2">
-            {member.website && (
-              <span className="p-2 rounded-full bg-gray-100 text-gray-500">
-                <Globe className="h-4 w-4" />
-              </span>
+            {member.facebook && (
+              <a href={member.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 text-gray-500 hover:text-[#1877F2] transition-colors" aria-label="Facebook">
+                <Facebook className="h-4 w-4" />
+              </a>
             )}
             {member.twitter && (
-              <span className="p-2 rounded-full bg-gray-100 text-gray-500">
-                <Twitter className="h-4 w-4" />
-              </span>
+              <a href={member.twitter} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 text-gray-500 hover:text-black transition-colors" aria-label="Instagram">
+                <Instagram className="h-4 w-4" />
+              </a>
             )}
             {member.linkedin && (
-              <span className="p-2 rounded-full bg-gray-100 text-gray-500">
+              <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 text-gray-500 hover:text-[#0077B5] transition-colors" aria-label="LinkedIn">
                 <Linkedin className="h-4 w-4" />
-              </span>
+              </a>
             )}
           </div>
         )}

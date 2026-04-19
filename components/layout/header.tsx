@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
-import { Search, PenSquare, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap, ChevronDown, Lock } from 'lucide-react';
+import { Search, User, LogOut, Settings, FileText, LayoutDashboard, Menu, X, Bell, Zap, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
-import { MembershipLevel, Role } from '@/lib/types';
+import { Category, MembershipLevel, Role } from '@/lib/types';
+import { categoriesAPI } from '@/lib/api';
 import { NotificationDropdown } from './notification-dropdown';
 import { MemberInfoModal } from '@/components/common/member-info-modal';
 
@@ -17,7 +18,6 @@ export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const isAdmin = user?.role === Role.ADMIN;
   const canAccessOnlyMembers = !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
-  const canCreatePosts = !!user && (isAdmin || user.isAccountant || user.membershipLevel !== MembershipLevel.REGULAR_USER);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showContentMenu, setShowContentMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -25,6 +25,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [displayDate, setDisplayDate] = useState('');
   const [showMemberInfoModal, setShowMemberInfoModal] = useState(false);
+  const [contentCategories, setContentCategories] = useState<Category[]>([]);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const contentMenuRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +65,10 @@ export function Header() {
     );
   }, []);
 
+  useEffect(() => {
+    categoriesAPI.list().then(setContentCategories).catch(() => setContentCategories([]));
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -87,24 +92,16 @@ export function Header() {
   const contentLinks: Array<{
     label: string;
     href: string;
-    showLock?: boolean;
-    hint?: string;
   }> = [
-    { label: 'Нийтлэлүүд', href: '/' },
-    { label: 'Мэдээ, мэдээлэл', href: '/news' },
+    { label: 'Бүх нийтлэл', href: '/' },
+    ...contentCategories.map((category) => ({
+      label: category.name,
+      href: `/?category=${category.id}`,
+    })),
   ];
 
-  if (isAuthenticated) {
-    contentLinks.push({
-      label: 'Нийтлэл бичих',
-      href: '/write',
-      showLock: !canCreatePosts,
-      hint: !canCreatePosts ? 'Зөвхөн гишүүд нийтлэл бичнэ' : undefined,
-    });
-  }
-
   if (canAccessOnlyMembers) {
-    contentLinks.push({ label: 'Only Members', href: '/only-members' });
+    contentLinks.push({ label: 'Дотоод булан', href: '/only-members' });
   }
 
   return (
@@ -118,11 +115,7 @@ export function Header() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-12 items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e63946] opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#e63946]"></span>
-                </span>
-                <img src="/club_logo.png" alt="ECN Club" className="h-5 w-auto object-contain" />
+                <img src="/club_logo.png" alt="ECN Club" className="h-6 w-auto object-contain" />
               </div>
 
               <div className="hidden sm:block text-xs text-white/50">
@@ -143,9 +136,7 @@ export function Header() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-8">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex h-8 w-11 items-center justify-center rounded-2xl bg-[#e63946] p-1 transition-transform group-hover:scale-105 overflow-hidden">
-                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
-              </div>
+              <img src="/club_logo.png" alt="ECN Club" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
               <div className="hidden sm:block">
                 <span className="text-xl font-bold tracking-tight text-white">ECN</span>
                 <span className="text-xl font-light tracking-tight text-white/60">.Club</span>
@@ -168,7 +159,7 @@ export function Header() {
                   type="button"
                   onClick={() => setShowContentMenu((value) => !value)}
                   className={`flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    pathname === '/' || pathname === '/news' || pathname.startsWith('/write')
+                    pathname === '/' || pathname.startsWith('/write')
                       ? 'bg-white/10 text-white'
                       : 'text-white/70 hover:bg-white/5 hover:text-white'
                   }`}
@@ -185,15 +176,9 @@ export function Header() {
                           key={item.label}
                           href={item.href}
                           onClick={() => setShowContentMenu(false)}
-                          className="flex items-center justify-between rounded-xl px-4 py-3 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+                          className="flex items-center rounded-xl px-4 py-3 text-sm text-white/80 transition-colors hover:bg-white/5 hover:text-white"
                         >
-                          <span>{item.label}</span>
-                          {item.showLock && (
-                            <span className="inline-flex items-center gap-1 text-xs text-amber-300" title={item.hint}>
-                              <Lock className="h-3 w-3" />
-                              <span>Members</span>
-                            </span>
-                          )}
+                          {item.label}
                         </Link>
                       ))}
                     </div>
@@ -236,19 +221,6 @@ export function Header() {
                 <>
                   {/* Notifications */}
                   <NotificationDropdown />
-
-                  {/* Write Button */}
-                  <Link href="/write" className="hidden sm:flex">
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 text-sm text-white/70 hover:text-white hover:bg-white/10 rounded-full"
-                      title={!canCreatePosts ? 'Зөвхөн гишүүд нийтлэл бичнэ' : undefined}
-                    >
-                      {canCreatePosts ? <PenSquare className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                      <span>Write</span>
-                      {!canCreatePosts && <span className="text-[11px] text-amber-300">Members</span>}
-                    </Button>
-                  </Link>
 
                   {/* User Menu */}
                   <div className="relative" ref={userMenuRef}>
@@ -304,7 +276,7 @@ export function Header() {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                           >
                             <User className="h-4 w-4" />
-                            <span>My Profile</span>
+                            <span>Миний профайл</span>
                           </Link>
                           <Link
                             href="/my-articles"
@@ -312,7 +284,7 @@ export function Header() {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                           >
                             <FileText className="h-4 w-4" />
-                            <span>My Articles</span>
+                            <span>Миний нийтлэлүүд</span>
                           </Link>
                           <Link
                             href="/settings"
@@ -320,7 +292,7 @@ export function Header() {
                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                           >
                             <Settings className="h-4 w-4" />
-                            <span>Settings</span>
+                            <span>Тохиргоо</span>
                           </Link>
 
                           {user?.role === Role.ADMIN && (
@@ -332,7 +304,7 @@ export function Header() {
                                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#e63946] hover:bg-white/5 transition-colors"
                               >
                                 <LayoutDashboard className="h-4 w-4" />
-                                <span>Admin Dashboard</span>
+                                <span>Админ самбар</span>
                               </Link>
                             </>
                           )}
@@ -344,7 +316,7 @@ export function Header() {
                             className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                           >
                             <LogOut className="h-4 w-4" />
-                            <span>Sign Out</span>
+                            <span>Гарах</span>
                           </button>
                         </div>
                       </div>
@@ -395,7 +367,7 @@ export function Header() {
                   </Link>
                 ))}
 
-                <div className="rounded-xl border border-white/10 bg-white/5 p-2">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-2">
                   <div className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-white/40">
                     Контент / Нийтлэл
                   </div>
@@ -406,12 +378,8 @@ export function Header() {
                         href={item.href}
                         onClick={() => setShowMobileMenu(false)}
                         className="rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                        title={item.hint}
                       >
-                        <span className="flex items-center justify-between">
-                          <span>{item.label}</span>
-                          {item.showLock && <Lock className="h-3.5 w-3.5 text-amber-300" />}
-                        </span>
+                          {item.label}
                       </Link>
                     ))}
                   </div>

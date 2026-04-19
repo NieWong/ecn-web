@@ -97,15 +97,12 @@ export default function LoginPage() {
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-12 w-16 items-center justify-center rounded-2xl bg-brand p-1 transition-transform group-hover:scale-105 overflow-hidden">
-              <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-xl object-cover" />
-            </div>
+            <img src="/club_logo.png" alt="ECN Club" className="h-12 w-auto object-contain transition-transform group-hover:scale-105" />
             <div>
               <span className="text-2xl font-bold tracking-tight text-white">ECN</span>
               <span className="text-2xl font-light tracking-tight text-white/60">.Club</span>
             </div>
           </Link>
-          <img src="/club_logo.png" alt="ECN Club" className="mt-6 h-7 w-auto object-contain" />
           
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/80">
@@ -133,9 +130,7 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="flex h-10 w-13 items-center justify-center rounded-xl bg-brand p-1 overflow-hidden">
-                <img src="/logo.png" alt="ECN Logo" className="h-full w-full rounded-lg object-cover" />
-              </div>
+              <img src="/club_logo.png" alt="ECN Club" className="h-10 w-auto object-contain" />
             </Link>
           </div>
 

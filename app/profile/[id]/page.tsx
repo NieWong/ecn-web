@@ -10,7 +10,7 @@ import { PublicProfile, Post, PostStatus } from '@/lib/types';
 import { getImageUrl, getProfileImageUrl } from '@/lib/helpers';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { Loader2, Globe, Twitter, Linkedin, Eye, User, ArrowLeft, PenSquare, Settings, Clock, AlertCircle } from 'lucide-react';
+import { Loader2, Facebook, Instagram, Linkedin, Eye, User, ArrowLeft, PenSquare, Settings, Clock, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -146,15 +146,15 @@ export default function ProfilePage() {
 
               {/* Social Links */}
               <div className="mt-8 flex items-center justify-center gap-4">
-                {profile.website && (
+                {profile.facebook && (
                   <a
-                    href={profile.website}
+                    href={profile.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/10 text-white hover:bg-[#e63946] transition-colors"
-                    title="Website"
+                    className="p-3 rounded-full bg-white/10 text-white hover:bg-[#1877F2] transition-colors"
+                    title="Facebook"
                   >
-                    <Globe className="h-5 w-5" />
+                    <Facebook className="h-5 w-5" />
                   </a>
                 )}
                 {profile.twitter && (
@@ -162,10 +162,10 @@ export default function ProfilePage() {
                     href={profile.twitter}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3 rounded-full bg-white/10 text-white hover:bg-[#1DA1F2] transition-colors"
-                    title="Twitter"
+                    className="p-3 rounded-full bg-white/10 text-white hover:bg-black transition-colors"
+                    title="Instagram"
                   >
-                    <Twitter className="h-5 w-5" />
+                    <Instagram className="h-5 w-5" />
                   </a>
                 )}
                 {profile.linkedin && (
